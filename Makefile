@@ -122,3 +122,13 @@ dist:
 	COMMIT_HASH=$$(git rev-parse --short HEAD); \
 	sed -i "s/^version = .*/version = \"1.0.dev$${COMMIT_COUNT}+$${COMMIT_HASH}\"/" pyproject.toml
 	$(PYTHON_BIN) -m build --wheel
+
+.PHONY: sapcli.tar.gz
+sapcli.tar.gz:
+	git update-index -q --refresh >/dev/null 2>&1
+	test -z "$$(git diff-index --name-only HEAD --)" || (echo "Uncommited changes ..."; exit 1)
+	git archive --format tar.gz -o $@ master
+
+.PHONY: docker
+docker: sapcli.tar.gz
+	sudo docker build -t sapcli -f docker/Dockerfile .
