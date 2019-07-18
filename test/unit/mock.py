@@ -294,6 +294,7 @@ class Connection(sap.adt.Connection):
         self.execs.append(req)
 
         res = next(self._resp_iter)
+
         if res is None:
             res = next(ok_responses())
 
