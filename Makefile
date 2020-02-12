@@ -132,3 +132,8 @@ sapcli.tar.gz:
 .PHONY: docker
 docker: sapcli.tar.gz
 	sudo docker build -t sapcli -f docker/Dockerfile .
+
+.PHONY: release-docker
+release-docker:
+	sudo docker tag sapcli docker.wdf.sap.corp:51190/automation/sapcli:latest
+	sudo docker push docker.wdf.sap.corp:51190/automation/sapcli:latest
