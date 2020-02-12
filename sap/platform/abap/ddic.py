@@ -42,6 +42,9 @@ class VSEOCLASS(Structure):
     # pylint: disable=invalid-name
     WITH_UNIT_TESTS: str
     CATEGORY: str
+    EXPOSURE: str
+    CLSFINAL: str
+    CLSABSTRCT: str
 
 
 # pylint: disable=invalid-name

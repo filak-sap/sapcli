@@ -158,9 +158,15 @@ def _load_objects(repo):
     repo.add_package_dir(abap_dir)
 
     for root, dirs, files in os.walk(abap_dir):
+        if root.endswith('/.git') or '/.git/' in root:
+            continue
+
         package = repo.find_package_by_path(root)
 
         for sub_dir in dirs:
+            if sub_dir == '.git':
+                continue
+
             sub_pkg_dir = os.path.join(root, sub_dir)
             # TODO: pass only dir name and not entire path
             repo.add_package_dir(sub_pkg_dir, parent=package)
