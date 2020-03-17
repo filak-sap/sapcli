@@ -110,6 +110,7 @@ class PROGDIR(Structure):
     UCCHECK: str
     RLOAD: str
     RSTAT: str
+    DBNA: str
 
 
 # pylint: disable=invalid-name
