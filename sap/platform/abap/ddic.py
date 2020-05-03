@@ -48,7 +48,7 @@ class VSEOCLASS(Structure):
     DURATION_TYPE: str
     RISK_LEVEL: str
     MSG_ID: str
-
+    RSTAT: str
 
 # pylint: disable=invalid-name
 # pylint: disable=too-few-public-methods
