@@ -127,7 +127,7 @@ dist:
 .PHONY: sapcli.tar.gz
 sapcli.tar.gz:
 	git update-index -q --refresh >/dev/null 2>&1
-	test -z "$$(git diff-index --name-only HEAD --)" || (echo "Uncommited changes ..."; exit 1)
+	if test -z $${SKIP_DIRTY_REPO_CHECK}; then test -z "$$(git diff-index --name-only HEAD --)" || (echo "Uncommited changes ..."; exit 1); fi
 	git archive --format tar.gz -o $@ master
 
 .PHONY: docker
@@ -136,5 +136,6 @@ docker: sapcli.tar.gz
 
 .PHONY: release-docker
 release-docker:
+	test 0 == $$(git cherry 2>/dev/null | wc -l) || (echo "Unpushed changes"; exit 1)
 	$(DOCKER) tag sapcli docker.wdf.sap.corp:51190/automation/sapcli:latest
 	$(DOCKER) push docker.wdf.sap.corp:51190/automation/sapcli:latest
