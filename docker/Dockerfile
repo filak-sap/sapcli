@@ -1,6 +1,8 @@
 FROM fedora
 LABEL maintainer="jakub.filak@sap.com"
 LABEL home="https://github.wdf.sap.corp/I335255/sapcli"
+ARG commit
+LABEL commit=${commit}
 
 COPY sapcli.tar.gz /var/tmp/
 
