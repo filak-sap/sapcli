@@ -8,6 +8,7 @@ TESTS_UNIT_DIR=$(TESTS_DIR)/unit
 TESTS_UNIT_FILES=$(shell find $(TESTS_UNIT_DIR) -type f -name '*.py')
 
 PYTHON_BIN=python3
+DOCKER=sudo docker
 
 COVERAGE_BIN=coverage
 COVERAGE_CMD_RUN=$(COVERAGE_BIN) run
@@ -131,9 +132,9 @@ sapcli.tar.gz:
 
 .PHONY: docker
 docker: sapcli.tar.gz
-	sudo docker build -t sapcli -f docker/Dockerfile .
+	$(DOCKER) build -t sapcli -f docker/Dockerfile .
 
 .PHONY: release-docker
 release-docker:
-	sudo docker tag sapcli docker.wdf.sap.corp:51190/automation/sapcli:latest
-	sudo docker push docker.wdf.sap.corp:51190/automation/sapcli:latest
+	$(DOCKER) tag sapcli docker.wdf.sap.corp:51190/automation/sapcli:latest
+	$(DOCKER) push docker.wdf.sap.corp:51190/automation/sapcli:latest
