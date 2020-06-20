@@ -132,7 +132,7 @@ sapcli.tar.gz:
 
 .PHONY: docker
 docker: sapcli.tar.gz
-	$(DOCKER) build --build-arg commit=$(git rev-parse HEAD) -t sapcli -f docker/Dockerfile .
+	$(DOCKER) build --label commit=$(git rev-parse HEAD) -t sapcli -f docker/Dockerfile .
 
 .PHONY: release-docker
 release-docker:
