@@ -228,6 +228,8 @@ def checkin_package(connection, repo_package):
         package.create()
     except sap.adt.errors.ExceptionResourceAlreadyExists as err:
         mod_log().info(err.message)
+    except sap.adt.errors.ExceptionResourceCreationFailure as err:
+        mod_log().info(err.message)
 
 
 def _resolve_dependencies(objects):
