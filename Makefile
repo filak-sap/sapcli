@@ -128,7 +128,7 @@ dist:
 sapcli.tar.gz:
 	git update-index -q --refresh >/dev/null 2>&1
 	if test -z $${SKIP_DIRTY_REPO_CHECK}; then test -z "$$(git diff-index --name-only HEAD --)" || (echo "Uncommited changes ..."; exit 1); fi
-	git archive --format tar.gz -o $@ master
+	git archive --format=tar.gz --output=$@ HEAD
 
 .PHONY: docker
 docker: sapcli.tar.gz
