@@ -136,6 +136,6 @@ docker: sapcli.tar.gz
 
 .PHONY: release-docker
 release-docker:
-	test 0 == $$(git cherry 2>/dev/null | wc -l) || (echo "Unpushed changes"; exit 1)
+	if test -z $${SKIP_LOCAL_COMMITS_CHECK}; then test 0 == $$(git cherry 2>/dev/null | wc -l) || (echo "Unpushed changes"; exit 1); fi
 	$(DOCKER) tag sapcli docker.wdf.sap.corp:51190/automation/sapcli:latest
 	$(DOCKER) push docker.wdf.sap.corp:51190/automation/sapcli:latest
