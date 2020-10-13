@@ -15,7 +15,7 @@ node ('factory') {
     set +o errexit
 
     echo "Build & release ..."
-    make docker release-docker DOCKER=docker
+    make docker release-docker DOCKER=docker SKIP_LOCAL_COMMITS_CHECK=true
 
     echo "Clean up ..."
     docker rmi sapcli:latest
