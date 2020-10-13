@@ -16,10 +16,13 @@ node ('factory') {
 
     echo "Build & release ..."
     make docker release-docker DOCKER=docker SKIP_LOCAL_COMMITS_CHECK=true
+    result=$?
 
     echo "Clean up ..."
     docker rmi sapcli:latest
     docker rmi docker.wdf.sap.corp:51190/automation/sapcli:latest
+
+    exit $result
     '''
   }
 }
