@@ -1,28 +1,40 @@
+final EMAIL_RECIPIENTS_CSV="jakub.filak@sap.com"
+final EMAIL_SUBJECT_PREFIX="DDIC: sapcli docker image "
+final EMAIL_BODY="See ${env.BUILD_URL} for more details."
 
 node ('factory') {
 
-  deleteDir()
+  emailext to:EMAIL_RECIPIENTS_CSV, subject:EMAIL_SUBJECT_PREFIX + "[STARTED]", body:EMAIL_BODY, mimeType: 'text/html'
 
-  checkout scm
+  try {
+    deleteDir()
 
-  withCredentials([usernamePassword(credentialsId: 'artifactory-user', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+    checkout scm
 
-    sh '''
-    set -o errexit
+    withCredentials([usernamePassword(credentialsId: 'artifactory-user', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
 
-    docker login -u ${USERNAME} -p ${PASSWORD} docker.wdf.sap.corp:51190
+      sh '''
+      set -o errexit
 
-    set +o errexit
+      docker login -u ${USERNAME} -p ${PASSWORD} docker.wdf.sap.corp:51190
 
-    echo "Build & release ..."
-    make docker release-docker DOCKER=docker SKIP_LOCAL_COMMITS_CHECK=true
-    result=$?
+      set +o errexit
 
-    echo "Clean up ..."
-    docker rmi sapcli:latest
-    docker rmi docker.wdf.sap.corp:51190/automation/sapcli:latest
+      echo "Build & release ..."
+      make docker release-docker DOCKER=docker SKIP_LOCAL_COMMITS_CHECK=true
+      result=$?
 
-    exit $result
-    '''
+      echo "Clean up ..."
+      docker rmi sapcli:latest
+      docker rmi docker.wdf.sap.corp:51190/automation/sapcli:latest
+
+      exit $result
+      '''
+    }
+
+    emailext to:EMAIL_RECIPIENTS_CSV, subject:EMAIL_SUBJECT_PREFIX + "[FINISHED]", body:EMAIL_BODY, mimeType: 'text/html'
+  }
+  catch (ex) {
+    emailext to:EMAIL_RECIPIENTS_CSV, subject:EMAIL_SUBJECT_PREFIX + "[FAILED]", body:EMAIL_BODY, mimeType: 'text/html'
   }
 }
