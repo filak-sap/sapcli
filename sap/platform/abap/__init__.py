@@ -311,6 +311,7 @@ class ABAPBaseWriter:
                 mod_log().debug('Setting: %s.%s = %s', self.parent.obj, name, self.obj)
                 self.parent.set_child(name, self.obj)
 
+            mod_log().debug('%s going to parent', name)
             return self.parent
 
         return self.do_end(name, contents)
@@ -442,15 +443,18 @@ class ABAPContentHandler(ContentHandler):
         mod_log().debug('<>%s</>', self.contents)
 
     def endElement(self, name):
-        mod_log().debug('</%s>', name)
-
         if name == 'asx:values':
+            mod_log().debug('</%s> exiting data', name)
             self._data = False
 
         if not self._data:
+            mod_log().debug('</%s> nolonger data section')
             return
 
+        mod_log().debug('</%s> current %s', name, type(self.current))
         self.current = self.current.end(name, self.contents)
+        mod_log().debug('</%s> next %s', name, type(self.current))
+        mod_log().debug('</%s> handle scalar value', name)
         self.contents = None
 
 
