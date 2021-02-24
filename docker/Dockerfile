@@ -7,8 +7,10 @@ COPY sapcli.tar.gz /var/tmp/
 RUN mkdir -p /opt/sapcli && \
     tar -C /opt/sapcli -zxf /var/tmp/sapcli.tar.gz && \
     test -e /opt/sapcli/bin/sapcli && \
-    dnf install -y python3 python3-requests; dnf clean all && \
+    dnf install -y python3 python3-requests python3-pyyaml python3-pip; dnf clean all && \
+    pip install pyodata && \
     ln -sf /opt/sapcli/sap /usr/lib/$(readlink /usr/bin/python3)/site-packages/ && \
-    ln -sf /opt/sapcli/bin/sapcli /usr/bin/sapcli
+    ln -sf /opt/sapcli/bin/sapcli /usr/bin/sapcli && \
+    sapcli --help
 
 ENTRYPOINT ["/usr/bin/python3", "/opt/sapcli/bin/sapcli"]
