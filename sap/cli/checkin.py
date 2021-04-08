@@ -185,7 +185,7 @@ def _get_config(starting_folder):
     conf_file_path = '.abapgit.xml'
 
     try:
-        with open(conf_file_path) as conf_file:
+        with open(conf_file_path, 'r', encoding='utf-8') as conf_file:
             conf_file_contents = conf_file.read()
     except OSError as ex:
         if ex.errno != errno.ENOENT:
@@ -201,7 +201,7 @@ def _get_config(starting_folder):
 def checkin_package(connection, repo_package):
 
     devc = DEVC()
-    with open(repo_package.path) as devc_file:
+    with open(repo_package.path, 'r', encoding='utf-8') as devc_file:
         sap.platform.abap.from_xml(devc, devc_file.read())
 
     sap.cli.core.printout(f'Creating Package: {repo_package.name} {devc.CTEXT}')
@@ -264,7 +264,7 @@ def checkin_intf(connection, repo_obj):
         raise sap.errors.SAPCliError(f'No .abap suffix of source file for interface {repo_obj.name}')
 
     abap_data = VSEOINTERF()
-    with open(repo_obj.path) as abap_data_file:
+    with open(repo_obj.path, 'r', encoding='utf-8') as abap_data_file:
         sap.platform.abap.from_xml(abap_data, abap_data_file.read())
 
     metadata = sap.adt.ADTCoreData(language='EN', master_language='EN', responsible=connection.user)
@@ -278,7 +278,7 @@ def checkin_intf(connection, repo_obj):
 
     sap.cli.core.printout('Writing Interface:', repo_obj.name)
     # TODO: corrnr
-    with open(source_file, 'r') as source:
+    with open(source_file, 'r', encoding='utf-8') as source:
         with interface.open_editor() as editor:
             editor.write(source.read())
 
@@ -292,7 +292,7 @@ def checkin_clas(connection, repo_obj):
         raise sap.errors.SAPCliError(f'No source file for class {repo_obj.name}')
 
     abap_data = VSEOCLASS()
-    with open(repo_obj.path) as abap_data_file:
+    with open(repo_obj.path, 'r', encoding='utf-8') as abap_data_file:
         sap.platform.abap.from_xml(abap_data, abap_data_file.read())
 
     metadata = sap.adt.ADTCoreData(language='EN', master_language='EN', responsible=connection.user)
@@ -325,7 +325,7 @@ def checkin_clas(connection, repo_obj):
         sap.cli.core.printout('Writing Clas:', repo_obj.name, sub_obj_id)
 
         # TODO: corrnr
-        with open(source_file, 'r') as source:
+        with open(source_file, 'r', encoding='utf-8') as source:
             with sub_obj.open_editor() as editor:
                 editor.write(source.read())
 
@@ -350,7 +350,7 @@ def checkin_prog(connection, repo_obj):
     if not source_file.endswith('.abap'):
         raise sap.errors.SAPCliError(f'No .abap suffix of source file for program {repo_obj.name}')
 
-    with open(repo_obj.path) as abap_data_file:
+    with open(repo_obj.path, 'r', encoding='utf-8') as abap_data_file:
         results = sap.platform.abap.abapgit.from_xml([PROGDIR, TPOOL], abap_data_file.read())
 
     progdir = results['PROGDIR']
@@ -380,7 +380,7 @@ def checkin_prog(connection, repo_obj):
 
     sap.cli.core.printout('Writing Program:', repo_obj.name)
     # TODO: corrnr
-    with open(source_file, 'r') as source:
+    with open(source_file, 'r', encoding='utf-8') as source:
         with program.open_editor() as editor:
             editor.write(source.read())
 
