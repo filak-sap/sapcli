@@ -34,13 +34,27 @@ def get_sample_delete_args():
     return args
 
 
+def make_error_response(status_code, text='{}'):
+    """Build a response mock usable with pyodata HttpError.
+
+    The response content must be valid JSON bytes because pyodata's SAP vendor
+    error handler (HttpError.VendorType) parses response.content when an
+    HttpError is instantiated.
+    """
+
+    resp = Mock()
+    resp.status_code = status_code
+    resp.text = text
+    resp.content = text.encode('utf-8')
+    return resp
+
+
 class TestBspCommands(unittest.TestCase):
     '''Test BSP cli commands'''
 
     @patch('builtins.open', mock_open(read_data=b'SOME_DATA'))
     def test_upload_create_ok(self):
-        resp = Mock()
-        resp.status_code = 404
+        resp = make_error_response(404)
         connection = MagicMock()
         connection.client.entity_sets.Repositories.get_entity().execute = Mock(
             side_effect=HttpError('MSG', resp))
@@ -60,8 +74,7 @@ class TestBspCommands(unittest.TestCase):
 
     @patch('builtins.open', mock_open(read_data=b'SOME_DATA'))
     def test_upload_http_error(self):
-        resp = Mock()
-        resp.status_code = 400
+        resp = make_error_response(400)
         connection = MagicMock()
         connection.client.entity_sets.Repositories.get_entity().execute = Mock(
             side_effect=HttpError('MSG', resp))
@@ -72,9 +85,7 @@ class TestBspCommands(unittest.TestCase):
     @patch('logging.getLogger', return_value=MagicMock())
     @patch('builtins.open', mock_open(read_data=b'SOME_DATA'))
     def test_upload_error_creating(self, log_patch):
-        resp = Mock()
-        resp.status_code = 404
-        resp.text = '{"a":"b"}'
+        resp = make_error_response(404, text='{"a":"b"}')
         connection = MagicMock()
         connection.client.entity_sets.Repositories.get_entity().execute = Mock(
             side_effect=HttpError('MSG', resp))
@@ -101,8 +112,7 @@ class TestBspCommands(unittest.TestCase):
         self.assertEqual(result, 0)
 
     def test_stat_not_found(self):
-        resp = Mock()
-        resp.status_code = 404
+        resp = make_error_response(404)
         connection = MagicMock()
         connection.client.entity_sets.Repositories.get_entity().execute = Mock(
             side_effect=HttpError('MSG', resp))
@@ -112,8 +122,7 @@ class TestBspCommands(unittest.TestCase):
         self.assertEqual(result, 10)
 
     def test_stat_http_error(self):
-        resp = Mock()
-        resp.status_code = 500
+        resp = make_error_response(500)
         connection = MagicMock()
         connection.client.entity_sets.Repositories.get_entity().execute = Mock(
             side_effect=HttpError('MSG', resp))
@@ -130,8 +139,7 @@ class TestBspCommands(unittest.TestCase):
         self.assertEqual(connection.client.entity_sets.Repositories.delete_entity.call_count, 2)
 
     def test_delete_not_found(self):
-        resp = Mock()
-        resp.status_code = 404
+        resp = make_error_response(404)
         connection = MagicMock()
         connection.client.entity_sets.Repositories.delete_entity().custom().execute = Mock(
             side_effect=HttpError('MSG', resp))
@@ -141,8 +149,7 @@ class TestBspCommands(unittest.TestCase):
         self.assertEqual(connection.client.entity_sets.Repositories.delete_entity.call_count, 2)
 
     def test_delete_http_error(self):
-        resp = Mock()
-        resp.status_code = 500
+        resp = make_error_response(500)
         connection = MagicMock()
         connection.client.entity_sets.Repositories.delete_entity().custom().execute = Mock(
             side_effect=HttpError('MSG', resp))

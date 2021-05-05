@@ -1,6 +1,8 @@
 """OData connection helpers"""
 
 import pyodata
+from pyodata.exceptions import HttpError
+from pyodata.vendor.SAP import BusinessGatewayError
 
 import sap.http
 from sap import get_logger
@@ -10,6 +12,9 @@ def mod_log():
     """OData Module logger"""
 
     return get_logger()
+
+
+HttpError.VendorType = BusinessGatewayError
 
 
 # pylint: disable=too-many-instance-attributes,too-few-public-methods
@@ -56,6 +61,5 @@ class Connection:
         )
 
         session, _ = self._http_client.build_session()
-
         base_url, _ = sap.http.build_url(ssl=ssl, host=host, port=port, path=service_path)
         self.client = pyodata.Client(base_url, session)
