@@ -45,6 +45,9 @@ class VSEOCLASS(Structure):
     EXPOSURE: str
     CLSFINAL: str
     CLSABSTRCT: str
+    DURATION_TYPE: str
+    RISK_LEVEL: str
+    MSG_ID: str
 
 
 # pylint: disable=invalid-name
