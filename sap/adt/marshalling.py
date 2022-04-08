@@ -4,6 +4,7 @@ from functools import partial
 
 import xml.sax
 from xml.sax.handler import ContentHandler
+from xml.sax.saxutils import escape, quoteattr
 
 from sap import get_logger
 from sap.errors import FatalError
@@ -429,7 +430,7 @@ class Marshal:
 
         xml_str = f'<{tree.name}'
 
-        attributes = ' '.join(f'{key}="{value}"' for key, value in tree.attributes.items())
+        attributes = ' '.join(f'{key}={quoteattr(value)}' for key, value in tree.attributes.items())
         if attributes:
             xml_str += f' {attributes}'
 
@@ -438,6 +439,8 @@ class Marshal:
         if content is None and tree.children:
             subnode = str('\n'.join((self._element_to_xml(child) for child in tree.children)))
             content = f'\n{subnode}\n'
+        elif content:
+            content = escape(content)
 
         if content is not None:
             xml_str += f'>{content}</{tree.name}>'
