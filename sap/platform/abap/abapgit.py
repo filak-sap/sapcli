@@ -32,6 +32,8 @@ class DOT_ABAP_GIT(Structure):
     FOLDER_LOGIC: str
     # pylint: disable=invalid-name
     IGNORE: StringTable
+    # pylint: disable=invalid-name
+    VERSION_CONSTANT: str
 
     @staticmethod
     def for_new_repo(MASTER_LANGUAGE: str = 'E', STARTING_FOLDER: str = 'src', FOLDER_LOGIC: str = FOLDER_LOGIC_FULL):
