@@ -52,6 +52,16 @@ _toml_version:
 _version:
 	sed -i "s/^_FALLBACK_VERSION = .*$$/_FALLBACK_VERSION = '$$(./get_version.sh)'/" $(VERSION_ENTRY)
 
+CURL=/usr/bin/curl
+
+# https://wiki.wdf.sap.corp/wiki/display/PIC/UsingConnectors
+# https://int.repositories.cloud.sap/artifactory/build-releases/com/sap/conn/nwrfc/nwrfcsdk.linuxx86_64/
+NWRFCSDK_VER=7.50
+NWRFCSDK_HF=9
+NWRFCSDK_DIST=nwrfcsdk.linuxx86_64-$(NWRFCSDK_VER).$(NWRFCSDK_HF).zip
+NWRFCSDK_DIST_URL=https://int.repositories.cloud.sap/artifactory/build-releases/com/sap/conn/nwrfc/nwrfcsdk.linuxx86_64/$(NWRFCSDK_VER).$(NWRFCSDK_HF)/$(NWRFCSDK_DIST)
+>>>>>>> 69357a2 (docker: install nwrfc)
+
 .PHONY: run_pylint
 run_pylint:
 	$(PYLINT_BIN) --rcfile=$(PYLINT_RC_FILE) $(PYLINT_PARAMS) $(PYTHON_MODULE)
@@ -115,7 +125,7 @@ release-fix: release
 
 .PHONY: clean
 clean:
-	rm -rf .coverage $(COVERAGE_HTML_DIR)
+	rm -rf .coverage $(COVERAGE_HTML_DIR) $(NWRFCSDK_DIST)
 
 .PHONY: dist
 dist:
@@ -130,9 +140,14 @@ sapcli.tar.gz:
 	if test -z $${SKIP_DIRTY_REPO_CHECK}; then test -z "$$(git diff-index --name-only HEAD --)" || (echo "Uncommited changes ..."; exit 1); fi
 	git archive --format=tar.gz --output=$@ HEAD
 
+$(NWRFCSDK_DIST):
+	$(CURL) -L -o $@ $(NWRFCSDK_DIST_URL)
+
 .PHONY: docker
-docker: sapcli.tar.gz
-	$(DOCKER) build --label SAPCLI_COMMIT=$$(git rev-parse HEAD) -t sapcli -f docker/Dockerfile .
+docker: $(NWRFCSDK_DIST) sapcli.tar.gz
+	$(DOCKER) build --no-cache --force-rm --label SAPCLI_COMMIT=$$(git rev-parse HEAD) \
+		--build-arg NWRFCSDK_DIST=$(NWRFCSDK_DIST) \
+		-t sapcli -f docker/Dockerfile .
 
 .PHONY: release-docker
 release-docker:
