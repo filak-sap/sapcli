@@ -1,4 +1,4 @@
-FROM fedora:36
+FROM fedora:37
 LABEL maintainer="jakub.filak@sap.com"
 LABEL home="https://github.wdf.sap.corp/I335255/sapcli"
 
