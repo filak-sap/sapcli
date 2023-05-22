@@ -14,6 +14,10 @@ from sap import rfc
 from sap.config import SAPCliConfigError
 from sap.errors import SAPCliError
 from sap.http.auth_plugin_cache import cache_key_for, get_response_store
+from sap.cli.plugin import (
+    discover_plugins,
+    PluginDefinitions
+)
 
 
 class CommandsCache:
@@ -24,6 +28,7 @@ class CommandsCache:
     rest = None
     odata = None
     local = None
+    plugins = None
 
     @staticmethod
     def commands():
@@ -130,7 +135,14 @@ class CommandsCache:
                 (no_connection, sap.cli.config.CommandGroup()),
             ]
 
-        return CommandsCache.adt + CommandsCache.rest + CommandsCache.rfc + CommandsCache.odata + CommandsCache.local
+        if CommandsCache.plugins is None:
+            discover_plugins()
+            CommandsCache.plugins = list()
+            for plugin_cls in PluginDefinitions.loaded_plugins:
+                plugin = plugin_cls()
+                CommandsCache.plugins.append((plugin.connection(), plugin.command_group()))
+
+        return CommandsCache.adt + CommandsCache.rest + CommandsCache.rfc + CommandsCache.odata + CommandsCache.local + CommandsCache.plugins
 
 
 def adt_connection_from_args(args):
