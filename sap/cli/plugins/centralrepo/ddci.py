@@ -1,8 +1,10 @@
 """gCTS methods"""
 
 import os
+from io import StringIO
 import shutil
 import subprocess
+import re
 import yaml
 
 from sap import get_logger
@@ -11,6 +13,14 @@ import sap.cli.helpers
 import sap.rest.gcts.simple
 from sap.rest.gcts.remote_repo import Repository
 
+CS_COMPONENT_MAPPING = {
+    'SAPFCORE' : 'SAPSCORE_B',
+    'SAPPCORE_H' : 'SAPPCORE_H',
+    'SAPSCORE' : 'SAPSCORE_B',
+    'SAPSCORE_B' : 'SAPSCORE_B',
+    'SCORE_HOME' : 'SAPPCORE_H',
+    'SAP_BASIS': 'SAP_BASIS',
+}
 
 def mod_log():
     """ADT Module logger"""
@@ -88,7 +98,7 @@ def print_ddci_repolist(repos, display_header=True, white_list_columns=None):
 
     columns = (
         sap.cli.helpers.TableWriter.Columns()
-        ('name', 'Name')
+        ('rid', 'ID')
         ('role', 'Role', default='N/a')
         ('component', 'Component', default='N/a')
         ('release', 'Release', default='N/a')
@@ -122,10 +132,11 @@ class GitCommand:
         self.proc = None
         self._console = console
 
-    def run(self, *args, cwd=None):
+    def run(self, *args, cwd=None, stdin=None):
         _args = [self._git_bin]
         _args.extend(args)
-        self.proc = subprocess.Popen(_args, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        mod_log().info('Executing: %s', str(_args))
+        self.proc = subprocess.Popen(_args, cwd=cwd, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             outs, errs = self.proc.communicate(timeout=60)
         except TimeoutExpired:
@@ -135,16 +146,37 @@ class GitCommand:
         if self.proc.returncode != 0:
             get_logger().info(errs.decode('utf-8'))
 
-        return outs.strip()
+        return outs.decode('utf-8').strip()
 
     def remote_get_url_origin(self, repo_dir):
-        return self.run('remote', 'get-url', 'origin', cwd=repo_dir)
+        url =  self.run('remote', 'get-url', 'origin', cwd=repo_dir)
+
+        if url is not None:
+            url = re.sub('https://.*github\.', 'https://github.', url)
+
+        return url
 
     def clone(self, url, dirname):
         return self.run('clone', url, dirname)
 
     def checkout(self, branch, repo_dir):
         return self.run('checkout', branch, cwd=repo_dir)
+
+    def checkout_new_local_branch(self, branch, repo_dir):
+        return self.run('checkout', '-b', branch, cwd=repo_dir)
+
+    def add(self, file_rel_path, repo_dir):
+        return self.run('add', file_rel_path, cwd=repo_dir)
+
+    def commit(self, message, repo_dir, message_body=None):
+        stdin = None
+        if message_body:
+            stdin = StringIO(message_body)
+
+        return self.run('commit', '-m', message, cwd=repo_dir, stdin=stdin)
+
+    def current_branch_name(self, repo_dir):
+        return self.run('branch', '--show-current', cwd=repo_dir)
 
 
 def get_local_repo_systemconfig(repo_dir, console):
@@ -160,24 +192,61 @@ def get_local_repo_systemconfig(repo_dir, console):
     return None
 
 
+def write_local_repo_systemconfig(repo_dir, systemconfig):
+    try:
+        with open(os.path.join(repo_dir, 'systemconfig.yml'), 'w') as stream:
+            stream.write('---\n')
+            stream.write(yaml.dump(systemconfig, default_flow_style=False))
+    except OSError as ex_file:
+        get_logger().info(str(ex_file))
+
+
+def repo_consistency_check(repo, console, git, local_repo_dir):
+
+    local_url = git.remote_get_url_origin(local_repo_dir)
+
+    if local_url != repo.url:
+        console.printout(f' ! Different URL: {repo.url} != {local_url}')
+
+    systemconfig = get_local_repo_systemconfig(local_repo_dir, console)
+    env = None
+    if systemconfig is None:
+        systemconfig = dict()
+        console.printout(f' ! Invalid systemconfig.yml: missing => COMP {repo.component} REL {repo.release}')
+    else:
+        env = systemconfig.get('env', None)
+        if env is None:
+            console.printout(f' ! Invalid systemconfig.yml: missing "env" => COMP {repo.component} REL {repo.release}')
+        if not isinstance(env, dict):
+            console.printout(f' ! Invalid systemconfig.yml: "env" is not a dictionary => COMP {repo.component} REL {repo.release}')
+            env = None
+
+    if env is None:
+        env = dict()
+        systemconfig['env'] = env
+    else:
+        comp = env.get('VCS_SAP_DELIVERY_COMP', None)
+        if comp is None:
+            console.printout(f' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_COMP"')
+        elif comp != repo.component:
+            console.printout(f' ! Invalid systemconfig.yml: component mismatch {repo.component} != {comp}')
+
+        rel = env.get('VCS_SAP_DELIVERY_RELEASE', None)
+        if rel is None:
+            console.printout(f' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_RELEASE"')
+        elif rel != repo.release:
+            console.printout(f' ! Invalid systemconfig.yml: release mismatch {repo.release} != {rel}')
+
+    return systemconfig
+
+
+
 @DdciRepoGroup.argument('-n', '--dryrun', default=False, action='store_true')
 @DdciRepoGroup.argument('destdir', default='/opt/ddci')
 @DdciRepoGroup.command('synchronize')
 # pylint: disable=unused-argument
 def synchronize(connection, args):
     """ls"""
-
-    component_mapping = {
-        'S4CORE' : '',
-        'SAPFCORE' : '',
-        'SAPPCORE_H' : '',
-        'SAPSCORE' : '',
-        'SCORE_HOME' : '',
-    }
-    release_mapping  = {
-        '107': '',
-        'S4DEV': '',
-    }
 
     console = sap.cli.core.get_console()
 
@@ -194,13 +263,14 @@ def synchronize(connection, args):
     repos = fetch_ddci_repos(connection)
     not_clonable = list()
     checkout_error = list()
-    missing_systemconfing = list()
 
     for repo in repos:
         console.printout(f'* {repo.rid} -> {repo.url}')
 
         if repo.rid in local_dirs:
             mod_log().info('Already exists')
+            local_dirs.remove(repo.rid)
+            continue
         else:
             mod_log().info('Clonning')
 
@@ -208,7 +278,6 @@ def synchronize(connection, args):
             if git.proc.returncode != 0:
                 console.printout(' ! Could not clone')
                 continue
-
 
         local_repo_dir = os.path.join(args.destdir, repo.rid)
 
@@ -220,47 +289,127 @@ def synchronize(connection, args):
             checkout_error.append(repo)
             continue
 
-        local_url = git.remote_get_url_origin(local_repo_dir)
+        repo_consistency_check(repo, console, git, local_repo_dir)
 
-        if local_url == repo.url:
-            console.printout(f' ! Different URL: {repo.url} != {local_url}')
+    if local_dirs:
+        console.printout('--- no longer gcts repos ---')
+        for local_repo in local_dirs:
+            console.printout(local_repo)
 
-        systemconfig = get_local_repo_systemconfig(local_repo_dir, console)
-        env = None
-        if systemconfig is None:
-            systemconfig = dict()
-            missing_systemconfing.append(repo)
-            console.printout(f' ! Invalid systemconfig.yml: missing => COMP {repo.component} REL {repo.release}')
+    return 0
+
+@DdciRepoGroup.argument('-n', '--dryrun', default=False, action='store_true')
+@DdciRepoGroup.argument('destdir', default='/opt/ddci')
+@DdciRepoGroup.command('migratetoer1')
+# pylint: disable=unused-argument
+def migratetoer1(connection, args):
+    """ls"""
+
+    component_mapping = {
+        'SAPFCORE' : 'SAPSCORE_B',
+        'SAPPCORE_H' : 'SAPPCORE_H',
+        'SAPSCORE' : 'SAPSCORE_B',
+        'SCORE_HOME' : 'SAPPCORE_H',
+    }
+
+    release_mapping  = {
+        'S4DEV': 'S4DEV',
+    }
+
+    local_dirs = [entry.name for entry in os.scandir(args.destdir) if entry.is_dir(follow_symlinks=False)]
+    console = sap.cli.core.get_console()
+    git = GitCommand(console)
+    repos = fetch_ddci_repos(connection)
+    for repo in repos:
+        console.printout(f'* {repo.rid} -> {repo.url}')
+        if repo.rid not in local_dirs:
+            console.printout(' ! - skipped')
+            continue
+        local_repo_dir = os.path.join(args.destdir, repo.rid)
+
+        systemconfig = repo_consistency_check(repo, console, git, local_repo_dir)
+        env = systemconfig['env']
+
+        if repo.component == '':
+            if repo.rid.startswith('s4corehome'):
+                env['VCS_SAP_DELIVERY_COMP'] = 'SAPPCORE_H'
+            else:
+                env['VCS_SAP_DELIVERY_COMP'] = 'SAPSCORE_B'
         else:
-            env = systemconfig.get('env', None)
-            if env is None:
-                console.printout(f' ! Invalid systemconfig.yml: missing "env" => COMP {repo.component} REL {repo.release}')
-            if not isinstance(env, dict):
-                console.printout(f' ! Invalid systemconfig.yml: "env" is not a dictionary => COMP {repo.component} REL {repo.release}')
-                env = None
+            env['VCS_SAP_DELIVERY_COMP'] = component_mapping[repo.component]
 
-        if env is None:
-            env = dict()
-            systemconfig['env'] = env
-        else:
-            comp = env.get('VCS_SAP_DELIVERY_COMP', None)
-            if comp is None:
-                console.printout(f' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_COMP"')
-            elif comp != repo.component:
-                console.printout(f' ! Invalid systemconfig.yml: component mismatch {repo.component} != {comp}')
-
-            rel = env.get('VCS_SAP_DELIVERY_RELEASE', None)
-            if rel is None:
-                console.printout(f' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_RELEASE"')
-            elif rel != repo.release:
-                console.printout(f' ! Invalid systemconfig.yml: release mismatch {repo.release} != {rel}')
-
-        env['VCS_SAP_DELIVERY_COMP'] = component_mapping.get(repo.component, 'S4CORE')
         env['VCS_SAP_DELIVERY_RELEASE'] = release_mapping.get(repo.release, 'S4DEV')
         env['upload_system'] = 'ER1'
         env['upload_client'] = '001'
 
-        console.printout(yaml.dump(systemconfig, default_flow_style=False))
+        if repo.branch == 'mirror_er9':
+            git.checkout_new_local_branch('mirror_er1', local_repo_dir)
+
+        write_local_repo_systemconfig(local_repo_dir, systemconfig)
+        git.add('systemconfig.yml', local_repo_dir)
+        git.commit('ddci: migrate to ER1 after CodeSplit', local_repo_dir)
+
+
+@DdciRepoGroup.argument('-n', '--dryrun', default=False, action='store_true')
+@DdciRepoGroup.argument('destdir', default='/opt/ddci')
+@DdciRepoGroup.command('mirror')
+# pylint: disable=unused-argument
+def mirror(connection, args):
+    """ls"""
+
+    console = sap.cli.core.get_console()
+
+    local_dirs = [entry.name for entry in os.scandir(args.destdir) if entry.is_dir(follow_symlinks=False)]
+    git = GitCommand(console)
+    repos = fetch_ddci_repos(connection)
+    repoidx = { repo.rid: repo for repo in repos }
+
+    for repodir in local_dirs:
+        local_repo_dir = os.path.join(args.destdir, repodir)
+        local_url = git.remote_get_url_origin(local_repo_dir)
+
+        console.printout(f'* {repodir} -> {local_url}')
+
+        if repodir in repoidx:
+            mod_log().info('Already exists')
+            continue
+
+        systemconfig = get_local_repo_systemconfig(local_repo_dir, console)
+        if systemconfig is None:
+            console.printout(f' ! systemconfig.yml: missing')
+            continue
+
+        mod_log().info('Setting up ...')
+        new_repo = sap.rest.gcts.remote_repo.Repository(connection, repodir)
+
+        mod_log().info('Creating ...')
+        new_repo.create(
+            local_url,
+            '1ER',
+            role='TARGET',
+            typ='GITHUB',
+            config={
+                'VCS_NO_IMPORT': 'true',
+                'VCS_TARGET_DIR': 'src/',
+                'VCS_SAP_DELIVERY_COMP': systemconfig['env']['VCS_SAP_DELIVERY_COMP'],
+                'VCS_SAP_DELIVERY_RELEASE': systemconfig['env']['VCS_SAP_DELIVERY_RELEASE'],
+            }
+        )
+
+        mod_log().info('Clonning ...')
+        new_repo.clone()
+
+        current_branch = git.current_branch_name(local_repo_dir)
+        if current_branch not in ['main', 'master']:
+            mod_log().info('Checking out %s ...', current_branch)
+            new_repo.checkout(current_branch)
+
+        mod_log().info('Enabling imports ...')
+        new_repo.set_config('VCS_NO_IMPORT', '')
+
+        if current_branch not in ['main', 'master']:
+            mod_log().info('Setting role SOURCE ...')
+            new_repo.set_role('SOURCE')
 
 
     return 0
@@ -289,3 +438,28 @@ def check(connection, args):
 
     return 0
 
+
+@DdciRepoGroup.argument('-n', '--dryrun', default=False, action='store_true')
+@DdciRepoGroup.command('updatecomponents')
+# pylint: disable=unused-argument
+def updatecomponents(connection, args):
+    """ls"""
+
+    console = sap.cli.core.get_console()
+
+    repos = fetch_ddci_repos(connection)
+    for repo in repos:
+        console.printout(f'* {repo.rid} -> {repo.url}')
+
+        if repo.component:
+            new_component = CS_COMPONENT_MAPPING[repo.component]
+            if new_component == repo.component:
+                console.printout(f' - OK: {repo.component}')
+                continue
+
+            console.printout(f' - {repo.component} -> {new_component}')
+
+            if args.dryrun:
+                continue
+
+                repo.set_config('VCS_SAP_DELIVERY_COMP', args.value)
