@@ -246,7 +246,7 @@ def repo_consistency_check(repo, console, git, local_repo_dir):
 @DdciRepoGroup.command('synchronize')
 # pylint: disable=unused-argument
 def synchronize(connection, args):
-    """ls"""
+    """Read repositories from an SAP system and clone them on a local FS"""
 
     console = sap.cli.core.get_console()
 
@@ -303,7 +303,7 @@ def synchronize(connection, args):
 @DdciRepoGroup.command('migratetoer1')
 # pylint: disable=unused-argument
 def migratetoer1(connection, args):
-    """ls"""
+    """Update SW Component, Release and other stuff for ER1"""
 
     component_mapping = {
         'SAPFCORE' : 'SAPSCORE_B',
@@ -355,7 +355,7 @@ def migratetoer1(connection, args):
 @DdciRepoGroup.command('mirror')
 # pylint: disable=unused-argument
 def mirror(connection, args):
-    """ls"""
+    """Create repositories from local filesystem in configure sap system"""
 
     console = sap.cli.core.get_console()
 
