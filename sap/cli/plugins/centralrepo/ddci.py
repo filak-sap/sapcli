@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import re
 import yaml
+import json
 
 from sap import get_logger
 import sap.cli.core
@@ -463,3 +464,34 @@ def updatecomponents(connection, args):
                 continue
 
                 repo.set_config('VCS_SAP_DELIVERY_COMP', args.value)
+
+
+@DdciRepoGroup.argument('destdir', default='/opt/ddci')
+@DdciRepoGroup.command('analyze-packages')
+# pylint: disable=unused-argument
+def analyze_packages(connection, args):
+    """Read packages of local FS repos and print them out"""
+
+
+    local_dirs = [entry.name for entry in os.scandir(args.destdir) if entry.is_dir(follow_symlinks=False)]
+    for repodir in local_dirs:
+        print(repodir)
+
+        obj_dir = os.path.join(args.destdir, repodir, 'src/objects/DEVC')
+        if not os.path.isdir(obj_dir):
+            continue
+
+        packages = [entry.name for entry in os.scandir(obj_dir) if entry.is_dir(follow_symlinks=False)]
+        for pkg in packages:
+            with open(os.path.join(obj_dir, pkg, f'DEVC {pkg}.asx.json'), 'r') as pkg_json:
+                tables = json.loads(pkg_json.read())
+
+            for t in tables:
+                if t['table'] != 'TDEVC':
+                    continue
+
+                rows = t['data']
+                break
+
+            print('- {pkg:33}: {layer:6} {component}'.format(pkg=pkg, layer=rows[0]['PDEVCLASS'], component=rows[0]['DLVUNIT']))
+
