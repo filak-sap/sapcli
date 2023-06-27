@@ -466,12 +466,21 @@ def updatecomponents(connection, args):
                 repo.set_config('VCS_SAP_DELIVERY_COMP', args.value)
 
 
+@DdciRepoGroup.argument('--adt-password', default=None)
+@DdciRepoGroup.argument('--adt-user', default=None)
+@DdciRepoGroup.argument('-c', '--commit', action='store_true', default=False)
 @DdciRepoGroup.argument('destdir', default='/opt/ddci')
 @DdciRepoGroup.command('analyze-packages')
 # pylint: disable=unused-argument
 def analyze_packages(connection, args):
     """Read packages of local FS repos and print them out"""
 
+    adt_connection = sap.adt.Connection(
+        args.ashost, args.client, args.adt_user, args.adt_password,
+        port=args.port, ssl=args.ssl, verify=args.verify)
+
+    layers = set()
+    components = set()
 
     local_dirs = [entry.name for entry in os.scandir(args.destdir) if entry.is_dir(follow_symlinks=False)]
     for repodir in local_dirs:
@@ -482,7 +491,9 @@ def analyze_packages(connection, args):
             continue
 
         packages = [entry.name for entry in os.scandir(obj_dir) if entry.is_dir(follow_symlinks=False)]
+        desync_pkgs = list()
         for pkg in packages:
+
             with open(os.path.join(obj_dir, pkg, f'DEVC {pkg}.asx.json'), 'r') as pkg_json:
                 tables = json.loads(pkg_json.read())
 
@@ -490,8 +501,48 @@ def analyze_packages(connection, args):
                 if t['table'] != 'TDEVC':
                     continue
 
-                rows = t['data']
+                tdevc = t['data']
                 break
 
-            print('- {pkg:33}: {layer:6} {component}'.format(pkg=pkg, layer=rows[0]['PDEVCLASS'], component=rows[0]['DLVUNIT']))
+            abap_pkg_name = tdevc[0]['DEVCLASS']
+            component = tdevc[0]['DLVUNIT']
+            layer = tdevc[0]['PDEVCLASS']
 
+            try:
+                adt_pkg = sap.adt.Package(adt_connection, abap_pkg_name)
+                adt_pkg.fetch()
+
+                syscomponent = adt_pkg.transport.software_component.name
+                syslayer = adt_pkg.transport.transport_layer.name
+            except:
+                syscomponent = 'N/a'
+                syslayer = 'N/a'
+
+            if component != syscomponent or layer != layer:
+                print(f'- {pkg:33}: {layer:6} :: {syslayer:6}; {component:10} :: {syscomponent}')
+                desync_pkgs.append(abap_pkg_name)
+
+            layers.add(layer)
+            components.add(component)
+
+        if args.commit and desync_pkgs:
+            try:
+                gcts_repo = sap.rest.gcts.remote_repo.Repository(connection, repodir)
+                response = gcts_repo.commit('devc: update SW comp and TR layer',
+                                      [{'object': pkg, 'type': 'DEVC'} for pkg in desync_pkgs],
+                                      description='''We did not change the DEVC objects in repos during CodeSplit
+
+JIRA=SYSDEV-888''',
+                                      autopush=True)
+                print(response)
+            except Exception as ex:
+                print(ex)
+
+    print('---')
+    print('layers')
+    for l in layers:
+        print(f'- {l}')
+
+    print('components')
+    for c in components:
+        print(f'- {c}')
