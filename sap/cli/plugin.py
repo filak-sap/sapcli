@@ -16,7 +16,7 @@ def discover_plugins():
         abspath = os.path.join(plugin_dir, fileordir)
         if abspath.endswith('.py'):
             module_name = fileordir[:-3]
-        if os.path.isdir(abspath):
+        elif os.path.isdir(abspath):
             module_name = fileordir
             abspath = os.path.join(abspath, '__init__.py')
         else:
@@ -48,6 +48,15 @@ class APluginBase(object, metaclass=PluginDefinitions):
 
     def connection(self):
         raise NotImplementedError
+
+
+class APluginBaseADT(object, metaclass=PluginDefinitions):
+
+    def command_group(self):
+        raise NotImplementedError
+
+    def connection(self):
+        return sap.cli.adt_connection_from_args
 
 
 class APluginBaseGcts(object, metaclass=PluginDefinitions):
