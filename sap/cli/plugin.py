@@ -30,6 +30,8 @@ def discover_plugins():
         sys.modules[abs_module_name] = module
         spec.loader.exec_module(module)
 
+    return PluginDefinitions.loaded_plugins
+
 
 class PluginDefinitions(type):
     loaded_plugins: List[type] = list()

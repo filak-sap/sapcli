@@ -136,9 +136,8 @@ class CommandsCache:
             ]
 
         if CommandsCache.plugins is None:
-            discover_plugins()
             CommandsCache.plugins = list()
-            for plugin_cls in PluginDefinitions.loaded_plugins:
+            for plugin_cls in discover_plugins():
                 plugin = plugin_cls()
                 CommandsCache.plugins.append((plugin.connection(), plugin.command_group()))
 
