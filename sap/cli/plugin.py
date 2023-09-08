@@ -12,6 +12,8 @@ def discover_plugins():
     plugin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plugins')
     for fileordir in os.listdir(plugin_dir):
         module_name = fileordir
+        if module_name[0] in ['.', '_']:
+            continue
 
         abspath = os.path.join(plugin_dir, fileordir)
         if abspath.endswith('.py'):
