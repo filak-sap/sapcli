@@ -38,8 +38,23 @@ def _write_modified_jenkins_file(stream, all_tokens, first_token, last_token):
     while idx < len(all_tokens) and all_tokens[idx].code == 'SP':
         idx += 1
 
+    # states: none, call, open, params, none
+    ddciPipelineAbapPackage = 'none'
     while idx < len(all_tokens):
-        stream.write(all_tokens[idx].value)
+        token = all_tokens[idx]
+
+        if ddciPipelineAbapPackage == 'none' and token.code == 'WR' and token.value == 'ddciPipelineAbapPackage':
+            ddciPipelineAbapPackage = 'call'
+        elif ddciPipelineAbapPackage == 'call' and token.value == '(':
+            ddciPipelineAbapPackage = 'open'
+        elif ddciPipelineAbapPackage == 'open' and token.code == 'WR':
+            ddciPipelineAbapPackage = 'params'
+        elif ddciPipelineAbapPackage == 'params' and token.value == ')':
+            ddciPipelineAbapPackage = 'none'
+
+        if ddciPipelineAbapPackage != 'params':
+            stream.write(all_tokens[idx].value)
+
         idx += 1
 
 @MigrationsGroup.argument('-n', '--dryrun', action='store_true', default=False)
@@ -105,6 +120,12 @@ def jenkinsfiletoproperties(connection, args):
             git.add(ddci_jenkinsfile_path, repo)
             git.add(ddci_properties_path, repo)
             git.commit('ddci: move config from Jenkinsfile to properties.yml', repo,
-                    message_body='JIRA: SYSDEV-1035')
+                    message_body='''The configuration option abapGhRepo is no longer needed because
+the pipeline ddciPipelineAbapPackage gets it from Jenkins scm and
+the integration pipeline knows it from users who must pass it as a parameter.
+
+Ref: https://github.wdf.sap.corp/factory/testing-jenkins-lib/commit/53d1e72465910ba5e4fd994a0ca97ec34b076f02
+
+JIRA: SYSDEV-1035''')
 
     return 0

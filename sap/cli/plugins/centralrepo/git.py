@@ -66,7 +66,11 @@ class GitCommand:
         return self.run('add', file_rel_path, cwd=repo_dir)
 
     def commit(self, message, repo_dir, message_body=None):
-        return self.run('commit', '-m', message, cwd=repo_dir, stdin=message_body)
+        if message_body is None:
+            return self.run('commit', '-m', message, cwd=repo_dir)
+        else:
+            stdin = f'{message}\n\n{message_body}'
+            return self.run('commit', '-F-', cwd=repo_dir, stdin=stdin)
 
     def current_branch_name(self, repo_dir):
         return self.run('branch', '--show-current', cwd=repo_dir)

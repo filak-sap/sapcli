@@ -127,7 +127,7 @@ def evaulate_ddci_pipeline_config(all_tokens):
 
                 value = tokens[idx+1]
                 if value.code == 'ST':
-                    config_stash[0][key] = value.value[1:-2]
+                    config_stash[0][key] = value.value[1:-1]
                 elif value.code == 'DG':
                     config_stash[0][key] = int(value.value)
                 elif value.code == 'BL':
@@ -143,7 +143,7 @@ def evaulate_ddci_pipeline_config(all_tokens):
                 idx += 2
                 continue
 
-        if token.value == 'ddciPipelineAbapPackage':
+        if token.value == 'ddciPipelineAbapPackage' and jenkins_config_var:
             openbrace = tokens[idx]
             if openbrace.value != '(':
                 mod_log().warning('The token "ddciPipelineAbapPackage" not followed by "(": %s %s', openbrace.code, openbrace.value)
