@@ -1,11 +1,6 @@
 """gCTS methods"""
 
 import os
-import sys
-from io import StringIO
-import shutil
-import subprocess
-import re
 import yaml
 import json
 
@@ -15,7 +10,15 @@ import sap.cli.helpers
 import sap.rest.gcts.simple
 from sap.rest.gcts.remote_repo import Repository
 
-from sap.cli.plugins.centralrepo.jenkinsfile import  parse_jenkinsfile_ci
+from sap.cli.plugins.centralrepo.git import (
+    get_local_repo_dirs,
+    GitCommand
+)
+
+from sap.cli.plugins.centralrepo.jenkinsfile import (
+    parse_jenkinsfile_ci,
+    evaulate_ddci_pipeline_config
+)
 
 
 CS_COMPONENT_MAPPING = {
@@ -98,10 +101,6 @@ def fetch_ddci_repos(connection):
     return (DdciRepository(repo) for repo in response if any((f'/{org}/' in repo.url.lower() for org in ['s4core', 's4corehome', 'asabap'])))
 
 
-def get_local_repo_dirs(basedir):
-    return [entry.name for entry in os.scandir(basedir) if entry.is_dir(follow_symlinks=False)]
-
-
 def print_ddci_repolist(repos, display_header=True, white_list_columns=None):
     console = sap.cli.core.get_console()
 
@@ -134,66 +133,12 @@ def repolist(connection, args):
     return 0
 
 
-class GitCommand:
-
-    def __init__(self, console):
-        self._git_bin = shutil.which('git')
-        self.proc = None
-        self._console = console
-
-    def run(self, *args, cwd=None, stdin=None):
-        _args = [self._git_bin]
-        _args.extend(args)
-        mod_log().info('Executing: %s', str(_args))
-        self.proc = subprocess.Popen(_args, cwd=cwd, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        try:
-            outs, errs = self.proc.communicate(timeout=60)
-        except TimeoutExpired:
-            self.proc.kill()
-            outs, errs =self.proc.communicate()
-
-        if self.proc.returncode != 0:
-            get_logger().info(errs.decode('utf-8'))
-
-        return outs.decode('utf-8').strip()
-
-    def remote_get_url_origin(self, repo_dir):
-        url =  self.run('remote', 'get-url', 'origin', cwd=repo_dir)
-
-        if url is not None:
-            url = re.sub('https://.*github\.', 'https://github.', url)
-
-        return url
-
-    def clone(self, url, dirname):
-        return self.run('clone', url, dirname)
-
-    def checkout(self, branch, repo_dir):
-        return self.run('checkout', branch, cwd=repo_dir)
-
-    def checkout_new_local_branch(self, branch, repo_dir):
-        return self.run('checkout', '-b', branch, cwd=repo_dir)
-
-    def add(self, file_rel_path, repo_dir):
-        return self.run('add', file_rel_path, cwd=repo_dir)
-
-    def commit(self, message, repo_dir, message_body=None):
-        stdin = None
-        if message_body:
-            stdin = StringIO(message_body)
-
-        return self.run('commit', '-m', message, cwd=repo_dir, stdin=stdin)
-
-    def current_branch_name(self, repo_dir):
-        return self.run('branch', '--show-current', cwd=repo_dir)
-
-
 def load_yaml_file(filepath, console):
     try:
         with open(filepath, 'r') as stream:
             try:
                 return yaml.safe_load(stream)
-            except yaml.YAMLERROR as ex_yaml:
+            except yaml.YAMLError as ex_yaml:
                 console.printerr(str(ex_yaml))
     except OSError as ex_file:
         get_logger().info(str(ex_file))
@@ -202,10 +147,10 @@ def load_yaml_file(filepath, console):
 
 
 def get_local_repo_systemconfig(repo_dir, console):
-    return load_yaml_file(os.path.join(repo_dir, 'systemconfig.yml'))
+    return load_yaml_file(os.path.join(repo_dir, 'systemconfig.yml'), console)
 
 def get_ddci_properties(repo_dir, console):
-    return load_yaml_file(os.path.join(repo_dir, '.ddci', 'properties.yml'))
+    return load_yaml_file(os.path.join(repo_dir, '.ddci', 'properties.yml'), console)
 
 def write_local_repo_systemconfig(repo_dir, systemconfig):
     try:
@@ -336,111 +281,9 @@ def ddciproperties(connection, args):
 
         jenkisfile_ci = os.path.join(repo, 'jenkins', 'Jenkinsfile_CI')
         all_tokens = parse_jenkinsfile_ci(jenkisfile_ci)
-
-        idx = 0
-        tokens = [t for t in all_tokens if t.code != 'SP']
-
-        jenkins_config_var = None
-        jenkins_config = {}
-        config_stash = []
-
-        while idx < len(tokens):
-            token = tokens[idx]
-            idx += 1
-
-            if token.value == 'def':
-                identifier = tokens[idx]
-                if identifier.code != 'WR':
-                    mod_log().warning('The token "def" not followed by a "WR" token: %s %s', identifier.code, identifier.value)
-                    continue
-
-                assignop = tokens[idx+1]
-                if assignop.value != '=':
-                    mod_log().warning('The token "%s" not followed by assignment: %s %s', identifier.value, assignop.code, assignop.value)
-                    continue
-
-                openbrace = tokens[idx+2]
-                if openbrace.value != '[':
-                    mod_log().warning('The token "=" not followed by [: %s %s', openbrace.code, openbrace.value)
-                    continue
-
-                jenkins_config_var = identifier
-                idx += 3
-                config_stash.insert(0, jenkins_config)
-                continue
-
-            if config_stash:
-                if token.value == ']':
-                    config_stash.pop(0)
-
-                if token.code == 'WR':
-                    key = token.value
-
-                    colon = tokens[idx]
-                    if colon.value != ':':
-                        mod_log().error('The config item "%s" not followed by ":": %s %s', key, colon.code, colon.value)
-                        sys.exit(1)
-
-                    value = tokens[idx+1]
-                    if value.code == 'ST':
-                        config_stash[0][key] = value.value[1:-2]
-                    elif value.code == 'DG':
-                        config_stash[0][key] = int(value.value)
-                    elif value.code == 'BL':
-                        config_stash[0][key] = bool(value.value)
-                    elif value.value == '[':
-                        new_config = {}
-                        config_stash[0][key] = new_config
-                        config_stash.insert(0, new_config)
-                    else:
-                        mod_log().error('The config item "%s" followed by an unexpected token: %s %s', key, value.code, value.value)
-                        sys.exit(1)
-
-                    idx += 2
-                    continue
-
-            if token.value == 'ddciPipelineAbapPackage':
-                openbrace = tokens[idx]
-                if openbrace.value != '(':
-                    mod_log().warning('The token "ddciPipelineAbapPackage" not followed by "(": %s %s', openbrace.code, openbrace.value)
-                    continue
-
-                param = tokens[idx+1]
-                if param.code != 'WR':
-                    mod_log().warning('The token "ddciPipelineAbapPackage" not called with "%s": %s %s', jenparam.code, param.value)
-                    sys.exit(1)
-
-                closebrace = tokens[idx+2]
-                if closebrace.value != ')':
-                    mod_log().warning('The token "ddciPipelineAbapPackage" not closed by ")": %s %s', closerace.code, closerace.value)
-                    continue
+        jenkins_config, _, __ = evaulate_ddci_pipeline_config(all_tokens)
 
         print(yaml.dump(jenkins_config, default_flow_style=False))
-
-    return 0
-
-
-@DdciRepoGroup.argument('-n', '--dryrun', default=False, action='store_true')
-@DdciRepoGroup.argument('destdir', default='/opt/ddci')
-# pylint: disable=unused-argument
-@DdciRepoGroup.command()
-def jenkinsfiletoproperties(connection, args):
-    """Transform jenkins/Jenkinsfile_CI to .ddci/properties.yml"""
-
-    console = sap.cli.core.get_console()
-
-    mod_log().info('Changing to the local dir: %s', args.destdir)
-    os.chdir(args.destdir)
-
-    local_dirs = get_local_repo_dirs(args.destdir)
-
-    git = GitCommand(console)
-
-    for repo in local_dirs:
-        console.printout(f'* {repo}')
-
-        jenkisfile_ci = os.path(repo, 'jenkins', 'Jenkinsfile_CI')
-        jenkins = parse_jenkinsfile_ci(jenkisfile_ci)
 
     return 0
 
