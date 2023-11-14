@@ -11,6 +11,9 @@ RUN mkdir -p ${TMP_INST_DIR}
 COPY sapcli.tar.gz ${TMP_INST_DIR}
 COPY ${NWRFCSDK_DIST} ${TMP_INST_DIR}
 
+COPY SAPNetCA_G2.crt /etc/pki/ca-trust/source/anchors
+RUN update-ca-trust
+
 RUN dnf install -y python3 python3-requests python3-pyyaml python3-pip python3-devel gcc-c++ unzip
 
 RUN unzip ${TMP_INST_DIR}/${NWRFCSDK_DIST} -d ${TMP_INST_DIR}/nwrfcsdk_dist && \

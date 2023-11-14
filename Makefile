@@ -140,11 +140,14 @@ sapcli.tar.gz:
 	if test -z $${SKIP_DIRTY_REPO_CHECK}; then test -z "$$(git diff-index --name-only HEAD --)" || (echo "Uncommited changes ..."; exit 1); fi
 	git archive --format=tar.gz --output=$@ HEAD
 
+SAPNetCA_G2.crt:
+	curl -o $@ https://aia.pki.co.sap.com/aia/SAPNetCA_G2.crt
+
 $(NWRFCSDK_DIST):
 	$(CURL) -L -o $@ $(NWRFCSDK_DIST_URL)
 
 .PHONY: docker
-docker: $(NWRFCSDK_DIST) sapcli.tar.gz
+docker: $(NWRFCSDK_DIST) sapcli.tar.gz SAPNetCA_G2.crt
 	$(DOCKER) build --no-cache --force-rm --label SAPCLI_COMMIT=$$(git rev-parse HEAD) \
 		--build-arg NWRFCSDK_DIST=$(NWRFCSDK_DIST) \
 		-t sapcli -f docker/Dockerfile .
