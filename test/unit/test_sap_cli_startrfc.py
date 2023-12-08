@@ -10,7 +10,7 @@ import sys
 import types
 
 import unittest
-from unittest.mock import Mock, MagicMock, patch, mock_open, call
+from unittest.mock import Mock, MagicMock, patch, mock_open
 
 from infra import generate_parse_args
 from mock import ConsoleOutputTestCase, PatcherTestCase, mod_pyrfc, TestRFCLibError, RetainedStringIO
@@ -260,21 +260,7 @@ Error(CICD_GCTS_TR|045): List of ABAP repository objects (piece list) is empty
 
         self.assertEqual(1, exit_code)
 
-    @patch('sap.cli.startrfc.path.exists', return_value=True)
-    def test_startrfc_args_response_file_exists(self, fake_exists):
-        params=['--response-file', './the/file/exists']
-
-        exit_code = self.execute_cmd(
-            params=params,
-            exp_call=False,
-            exp_stdout='',
-            exp_stderr='The response file must not exist: ./the/file/exists\n')
-
-        self.assertEqual(fake_exists.mock_calls[-1], call('./the/file/exists'))
-        self.assertEqual(1, exit_code)
-
-    @patch('sap.cli.startrfc.path.exists', return_value=False)
-    def do_startrfc_args_response_file_error_at_open(self, exception, message, fake_exists):
+    def do_startrfc_args_response_file_error_at_open(self, exception, message):
         params=['--response-file', './the_file']
 
         self.rfc_connection.call.return_value = {
@@ -289,7 +275,7 @@ Error(CICD_GCTS_TR|045): List of ABAP repository objects (piece list) is empty
                 exp_stderr='\n'.join([message, '{\'STATUS\': \'Super cool!\'}', ''])
             )
 
-        m.assert_called_once_with('./the_file', 'x', encoding='utf-8')
+        m.assert_called_once_with('./the_file', 'w', encoding='utf-8')
         self.assertEqual(1, exit_code)
 
     def test_startrfc_args_response_file_at_open_exists(self):
@@ -304,8 +290,7 @@ Error(CICD_GCTS_TR|045): List of ABAP repository objects (piece list) is empty
             'Could not open the file ./the_file: permissions'
         )
 
-    @patch('sap.cli.startrfc.path.exists', return_value=False)
-    def test_startrfc_args_response_file_full_success(self, fake_exists):
+    def test_startrfc_args_response_file_full_success(self):
         params=['--response-file', './the_file']
 
         self.rfc_connection.call.return_value = {
@@ -322,7 +307,7 @@ Error(CICD_GCTS_TR|045): List of ABAP repository objects (piece list) is empty
                 exp_stderr=''
             )
 
-        m.assert_called_once_with('./the_file', 'x', encoding='utf-8')
+        m.assert_called_once_with('./the_file', 'w', encoding='utf-8')
         self.assertEqual(buffer.finalvalue, '{\'STATUS\': \'Super cool!\'}')
         self.assertEqual(0, exit_code)
 

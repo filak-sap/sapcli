@@ -4,7 +4,6 @@ import sys
 import json
 import pprint
 import base64
-from os import path
 
 import sap.cli.core
 from sap.cli.core import InvalidCommandLineError
@@ -97,12 +96,6 @@ def startrfc(connection, args):
 
     console = args.console_factory()
 
-    # we required new file to avoid security problems if executed
-    # under a user with escalated privileges
-    if args.response_file and path.exists(args.response_file):
-        console.printerr(f'The response file must not exist: {args.response_file}')
-        return 1
-
     try:
         rfc_params = _get_call_rfc_params_from_args(args)
     except InvalidCommandLineError as ex:
@@ -131,8 +124,7 @@ def startrfc(connection, args):
     # if the response file is given
     if args.response_file:
         try:
-            # try to dump the formatted response into a completely new file
-            with open(args.response_file, 'x', encoding='utf-8') as file_obj:
+            with open(args.response_file, 'w', encoding='utf-8') as file_obj:
                 file_obj.write(response_formatted)
         except FileExistsError:
             console.printerr(f'Could not create and open the file: {args.response_file}')
