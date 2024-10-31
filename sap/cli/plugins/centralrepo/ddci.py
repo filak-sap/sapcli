@@ -20,6 +20,19 @@ from sap.cli.plugins.centralrepo.jenkinsfile import (
     evaulate_ddci_pipeline_config
 )
 
+from sap.rest.gcts.sugar import (
+    abap_modifications_disabled
+)
+
+from sap.rest.gcts.errors import (
+    GCTSRequestError,
+    SAPCliError,
+)
+
+from sap.cli.gcts import (
+    dump_gcts_messages,
+    ConsoleSugarOperationProgress
+)
 
 CS_COMPONENT_MAPPING = {
     'SAPFCORE' : 'SAPSCORE_B',
@@ -535,3 +548,95 @@ JIRA=SYSDEV-888''',
     print('components')
     for c in components:
         print(f'- {c}')
+
+
+@DdciRepoGroup.argument('-r', '--repo')
+@DdciRepoGroup.argument('-c', '--commit')
+@DdciRepoGroup.argument('-b', '--branch')
+@DdciRepoGroup.argument('destdir', default='/opt/ddci')
+@DdciRepoGroup.command('pull_ddci_configuration_changes_commit')
+# pylint: disable=unused-argument
+def pull_ddci_configuration_changes_commit(connection, args):
+    """Pull central mirror branch with remote mirror branch"""
+
+    gcts_repos = sap.rest.gcts.simple.fetch_repos(connection)
+
+    for gcts_repo in gcts_repos:
+        if gcts_repo.name != args.repo:
+            continue
+            
+        mod_log().info('Repo: %s', gcts_repo.name)
+        central_repo_branch = gcts_repo.branch
+        mod_log().info('Branch on central repo: %s', central_repo_branch)
+        central_repo_head_commit_hash = gcts_repo.head
+        mod_log().info('Last commit on central repo branch: %s', central_repo_head_commit_hash)
+
+        if central_repo_branch != args.branch:
+            print("ERROR: Branch of central gCTS repo is not " + args.branch + "!")
+            exit(2)
+        
+        console = sap.cli.core.get_console()
+        git = GitCommand(console)
+        local_repo_dir = os.path.join(args.destdir, gcts_repo.rid)
+        
+        remote_repo_url = git.remote_get_url_origin(local_repo_dir).removesuffix(".git")
+        gcts_repo_url_without_suffix = gcts_repo.url.removesuffix(".git")
+        if remote_repo_url != gcts_repo_url_without_suffix:
+            print("ERROR:   Remote URL of local GIT repository in given destination doesn't match with repository URL of the central one")
+            print("Central: " + gcts_repo_url_without_suffix)
+            print("Local:   " + remote_repo_url)
+            exit(1)
+        local_repo_branch = git.current_branch_name(local_repo_dir)
+        if local_repo_branch != central_repo_branch:
+            print("ERROR:   Local repository branch doesn't match with branch of the central one")
+            print("Central: " + central_repo_branch)
+            print("Local:   " + local_repo_branch)
+            exit(1)
+        local_repo_commit = git.run('rev-parse', 'HEAD', cwd=local_repo_dir)
+        if local_repo_commit != args.commit:
+            print("ERROR:   Local repository HEAD commit hash doesn't match with branch of the central one")
+            print("Central: " + central_repo_head_commit_hash)
+            print("Local:   " + local_repo_commit)
+            exit(1)
+        
+        difference_commits = git.run('cherry', central_repo_head_commit_hash, cwd=local_repo_dir)
+        mod_log().info('Difference commits between central repo branch and remote repo branch:')
+        mod_log().info(difference_commits)
+        
+        if difference_commits == '':
+            print("WARNING: Remote " + args.branch + " branch and central gCTS " + central_repo_branch + " branch are equal. Nothing to pull.")
+            exit(0)
+        
+        list_of_difference_commits = difference_commits.splitlines()
+        # example of print(list_of_difference_commits):
+        # + fac6af5dd8ae6e399e937dba6f4d31be7654d833
+        # + 7c9762c19b70afedf2c1bf583af3793f6fa3cf93
+        if len(list_of_difference_commits) != 1:
+            print("ERROR:    The difference between remote " + args.branch + " branch and central gCTS " + central_repo_branch + " branch should be just one commit")
+            print("Expected: " + args.commit)
+            print("Actual:   " + difference_commits)
+            exit(3)
+        hash_of_first_commit = list_of_difference_commits[0].split()[1]
+        mod_log().info('Commit hash of first difference: %s', hash_of_first_commit)
+        if hash_of_first_commit != args.commit:
+            print("ERROR:    The difference between remote " + args.branch + " branch and central gCTS " + args.branch + " branch should be just one concrete commit")
+            print("Expected: " + args.commit)
+            print("Actual:   " + hash_of_first_commit)
+            exit(4)
+        
+        print("The difference between remote " + args.branch + " branch and central gCTS " + args.branch + " branch is only following commit:")
+        print(hash_of_first_commit)
+        print("")
+        
+        noimports_progress = ConsoleSugarOperationProgress(console)
+        try:
+            with abap_modifications_disabled(gcts_repo, progress=noimports_progress):
+                print('Pulling central GCTS repo ...')
+                response = sap.rest.gcts.simple.pull(connection, gcts_repo.name)
+                print(response)
+        except GCTSRequestError as ex:
+            dump_gcts_messages(console, ex.messages)
+            exit(1)
+        except SAPCliError as ex:
+            console.printerr(str(ex))
+            exit(1)
