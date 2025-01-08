@@ -18,12 +18,13 @@ RUN update-ca-trust
 RUN dnf install -y 'dnf-command(config-manager)' \
  && dnf config-manager --enable crb \
  && dnf install -y python3.12 python3.12-requests python3.12-pyyaml python3.12-pip python3.12-devel python3.12-Cython \
-        gcc-c++ unzip which git epel-release \
+        gcc gcc-c++ openldap-devel unzip which git epel-release \
  && ln -sf $(which pip3.12) /usr/local/bin/pip \
  && ln -sf $(which python3.12) /usr/local/bin/python \
  && ln -sf $(which python3.12) /usr/bin/python3 \
  && python --version \
  && python3 --version \
+ && pip install python-ldap \
  && pip --version
 
 RUN unzip ${TMP_INST_DIR}/${NWRFCSDK_DIST} -d ${TMP_INST_DIR}/nwrfcsdk_dist && \
@@ -36,7 +37,7 @@ RUN echo "** Clonning github.com/SAP/pyrfc" && cd /tmp/ && git clone --depth 1 -
     echo "** Installing Python3 PyNWRFC" && pip install . && \
     echo "** Verifying PyRFC installation" && cd / && echo "import pyrfc" | python3
 
-RUN dnf erase -y python3.12-devel gcc-c++ unzip which git && dnf clean all
+RUN dnf erase -y python3.12-devel gcc gcc-c++ openldap-devel unzip which git && dnf clean all
 
 RUN mkdir -p /opt/sapcli && \
     tar -C /opt/sapcli -zxf ${TMP_INST_DIR}/sapcli.tar.gz && \
