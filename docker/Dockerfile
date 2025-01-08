@@ -27,7 +27,9 @@ RUN dnf install -y 'dnf-command(config-manager)' \
  && pip install python-ldap \
  && pip --version
 
+ENV LANG=en_US.UTF-8
 RUN echo -e "LANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8" > /etc/locale.conf
+RUN echo -e "LANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8" > /etc/profile.d/locale.sh
 
 RUN unzip ${TMP_INST_DIR}/${NWRFCSDK_DIST} -d ${TMP_INST_DIR}/nwrfcsdk_dist && \
     echo "** Unpacking NWRFCSDK dist" && mkdir -p $(dirname ${SAPNWRFC_HOME}) && \
@@ -47,6 +49,7 @@ RUN mkdir -p /opt/sapcli && \
     pip install pyodata && \
     ln -sf /opt/sapcli/sap /usr/lib/$(basename $(readlink /usr/bin/python3))/site-packages/ && \
     ln -sf /opt/sapcli/bin/sapcli /usr/bin/sapcli && \
-    sapcli --help
+    sapcli --help && \
+    python -c "from sap.platform.language import locale_lang_sap_code; print(locale_lang_sap_code())"
 
 ENTRYPOINT ["/usr/bin/python3", "/opt/sapcli/bin/sapcli"]
