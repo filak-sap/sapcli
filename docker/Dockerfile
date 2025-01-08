@@ -18,7 +18,7 @@ RUN update-ca-trust
 RUN dnf install -y 'dnf-command(config-manager)' \
  && dnf config-manager --enable crb \
  && dnf install -y python3.12 python3.12-requests python3.12-pyyaml python3.12-pip python3.12-devel python3.12-Cython \
-        gcc gcc-c++ openldap-devel unzip which git epel-release \
+        gcc gcc-c++ openldap-devel unzip which git epel-release glibc-langpack-en \
  && ln -sf $(which pip3.12) /usr/local/bin/pip \
  && ln -sf $(which python3.12) /usr/local/bin/python \
  && ln -sf $(which python3.12) /usr/bin/python3 \
@@ -26,6 +26,8 @@ RUN dnf install -y 'dnf-command(config-manager)' \
  && python3 --version \
  && pip install python-ldap \
  && pip --version
+
+RUN echo -e "LANG=en_US.UTF-8\nLC_ALL=en_US.UTF-8" > /etc/locale.conf
 
 RUN unzip ${TMP_INST_DIR}/${NWRFCSDK_DIST} -d ${TMP_INST_DIR}/nwrfcsdk_dist && \
     echo "** Unpacking NWRFCSDK dist" && mkdir -p $(dirname ${SAPNWRFC_HOME}) && \
