@@ -557,7 +557,19 @@ JIRA=SYSDEV-888''',
 @DdciRepoGroup.command('pull_ddci_configuration_changes_commit')
 # pylint: disable=unused-argument
 def pull_ddci_configuration_changes_commit(connection, args):
-    """Pull central mirror branch with remote mirror branch"""
+    """Pull central mirror branch with commit with configuration changes push by 
+    update_packages_ddci_properties.sh script to the remote mirror branch.
+    
+    The command should be executed in the local directory of the gCTS repo and
+    should be executed right after the commit with configuration changes was pushed
+    to the remote mirror branch. Local repository should be in the same state
+    as the remote one.
+    
+    Arguments:
+    -c, --commit ... the commit hash which was pushed to the remote mirror branch
+    -b, --branch ... the branch name of the remote mirror branch
+    -r, --repo   ... the name of the central gCTS repo
+    """
 
     gcts_repos = sap.rest.gcts.simple.fetch_repos(connection)
 
@@ -594,9 +606,9 @@ def pull_ddci_configuration_changes_commit(connection, args):
             exit(1)
         local_repo_commit = git.run('rev-parse', 'HEAD', cwd=local_repo_dir)
         if local_repo_commit != args.commit:
-            print("ERROR:   Local repository HEAD commit hash doesn't match with branch of the central one")
-            print("Central: " + central_repo_head_commit_hash)
-            print("Local:   " + local_repo_commit)
+            print("ERROR:   Local repository HEAD commit hash doesn't match with provided commit hash in -c,--commit argument")
+            print("Argument commit hash:  " + args.commit)
+            print("Local commit hash:     " + local_repo_commit)
             exit(1)
         
         difference_commits = git.run('cherry', central_repo_head_commit_hash, cwd=local_repo_dir)
