@@ -317,6 +317,24 @@ def gcts_connection_from_args(args):
                                session_initializer=session_initializer)
 
 
+def flp_connection_from_args(args):
+    """Returns REST connection constructed from the passed args (Namespace).
+    """
+
+    import sap.rest
+
+    return sap.rest.Connection(
+        'sap', # Base path
+        'bc/ui2/flp', # Login path
+        args.ashost,
+        args.client,
+        args.user,
+        args.password,
+        port=args.port,
+        ssl=args.ssl,
+        verify=args.verify)
+
+
 def odata_connection_from_args(service_name, args):
     """Returns OData connection constructed from the passed args (Namespace).
     """

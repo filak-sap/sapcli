@@ -70,3 +70,12 @@ class APluginBaseGcts(object, metaclass=PluginDefinitions):
 
     def connection(self):
         return sap.cli.gcts_connection_from_args
+
+
+class APluginBaseFLP(object, metaclass=PluginDefinitions):
+
+    def command_group(self):
+        raise NotImplementedError
+
+    def connection(self):
+        return sap.cli.flp_connection_from_args
