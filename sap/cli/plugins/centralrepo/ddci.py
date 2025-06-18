@@ -424,12 +424,12 @@ def check(connection, args):
     """ls"""
 
     ddci_repos = fetch_ddci_repos(connection)
-    expected_branch = 'mirror_er9'
+    expected_branch = 'mirror_er1'
 
     repos = list()
 
     for repo in ddci_repos:
-        if repo.role == 'SOURCE' and repo.branch != expected_branch:
+        if repo.role == 'TARGET' and repo.branch != expected_branch:
             repos.append(repo)
 
     if repos:
