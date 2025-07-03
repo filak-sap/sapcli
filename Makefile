@@ -141,7 +141,7 @@ sapcli.tar.gz:
 	git archive --format=tar.gz --output=$@ HEAD
 
 SAPNetCA_G2.crt:
-	curl -o $@ https://aia.pki.co.sap.com/aia/SAPNetCA_G2.crt
+	curl -o $@ https://aia.pki.co.sap.com/aia/SAPNetCA_G2_2.crt
 
 $(NWRFCSDK_DIST):
 	$(CURL) -L -o $@ $(NWRFCSDK_DIST_URL)
