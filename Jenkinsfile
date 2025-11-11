@@ -16,7 +16,7 @@ node ('factory') {
       sh '''
       set -o errexit
 
-      docker login -u ${USERNAME} -p ${PASSWORD} docker.wdf.sap.corp:51190
+      docker login -u ${USERNAME} -p ${PASSWORD} dlm.int.repositories.cloud.sap
 
       set +o errexit
 
@@ -26,7 +26,7 @@ node ('factory') {
 
       echo "Clean up ..."
       docker rmi sapcli:latest
-      docker rmi docker.wdf.sap.corp:51190/automation/sapcli:latest
+      docker rmi dlm.int.repositories.cloud.sap/automation/sapcli:latest
 
       exit $result
       '''
