@@ -49,7 +49,7 @@ class GitCommand:
         url =  self.run('remote', 'get-url', 'origin', cwd=repo_dir)
 
         if url is not None:
-            url = re.sub('https://.*github\.', 'https://github.', url)
+            url = re.sub('https://.*github\\.', 'https://github.', url)
 
         return url
 
