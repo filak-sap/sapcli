@@ -186,7 +186,8 @@ class HTTPClient():
         """Execute an HTTP request and return the raw (request, response) tuple."""
 
         url = f'{self._base_url}/{path.lstrip("/")}'
-        default_params = build_query_args(self.client, self.saml2)
+        # Without explicit SAML2 because some endpoints are not happy with SAML2 query param (e.g. gCTS)
+        default_params = build_query_args(self.client, None)
         default_params.update(params or {})
         req = requests.Request(method.upper(), url, params=default_params, data=body, headers=headers)
         req = session.prepare_request(req)
@@ -224,10 +225,15 @@ class HTTPClient():
 
             session.headers.pop('x-csrf-token', None)
 
+            # Re-establishing the session requires the SAML2 query parameter
+            # just like the initial login in build_session; without it the
+            # re-login after a long-running call may fail.
+            login_params = build_query_args(None, self.saml2)
             response = self.execute_with_session(
                 session,
                 self.login_method,
                 self.login_path,
+                params=login_params,
                 headers={'x-csrf-token': 'Fetch'}
             )
 
@@ -259,7 +265,11 @@ class HTTPClient():
         login_headers = {'x-csrf-token': 'Fetch'}
         csrf_token = None
 
-        response = self.execute_with_session(session, self.login_method, self.login_path, headers=login_headers)
+        # Without explicit Client because that is added in the method retrive.
+        # We need to use SAML2=enabled/disabled only for login and thus doing
+        # it here and not in the method retrieve.
+        parameters = build_query_args(None, self.saml2)
+        response = self.execute_with_session(session, self.login_method, self.login_path, params=parameters, headers=login_headers)
 
         if 'x-csrf-token' in response.headers:
             csrf_token = response.headers['x-csrf-token']

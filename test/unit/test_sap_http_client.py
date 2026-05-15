@@ -334,7 +334,7 @@ class TestHTTPClientRetrieve(unittest.TestCase):
         args, kwargs = mock_request_cls.call_args
         self.assertEqual(args[0], 'POST')
         self.assertEqual(args[1], 'https://myhost:44300/api/path')
-        self.assertEqual(kwargs['params'], {'sap-client': '200', 'saml2': 'enabled', 'foo': 'bar'})
+        self.assertEqual(kwargs['params'], {'sap-client': '200', 'foo': 'bar'})
         self.assertEqual(kwargs['data'], 'data')
         self.assertEqual(kwargs['headers'], {'X-H': '1'})
 
@@ -843,7 +843,7 @@ class TestHTTPClientBuildSession(unittest.TestCase):
         client.build_session()
 
         client.execute_with_session.assert_called_once_with(
-            mock_session, 'GET', 'my/login', headers={'x-csrf-token': 'Fetch'}
+            mock_session, 'GET', 'my/login', params={}, headers={'x-csrf-token': 'Fetch'}
         )
 
 
@@ -913,6 +913,133 @@ class TestHTTPClientSessionInitializer(unittest.TestCase):
 
         self.assertIs(result, unauth)
         custom.build_unauthorized_error.assert_called_once_with(req, res)
+
+
+class TestHTTPClientSaml2QueryParam(unittest.TestCase):
+    """Verify that saml2 query parameter is only used for login requests."""
+
+    def _make_client(self, **kwargs):
+        defaults = dict(host='example.com', user='SAP*', password='pass', client='100',
+                        login_path='login', login_method='HEAD', saml2=True)
+        defaults.update(kwargs)
+        return HTTPClient(**defaults)
+
+    def test_retrieve_does_not_include_saml2_param(self):
+        client = self._make_client()
+        session = MagicMock()
+        response = Mock()
+        response.status_code = 200
+        session.send.return_value = response
+
+        client.retrieve(session, 'GET', '/some/path')
+
+        prepared = session.prepare_request.call_args[0][0]
+        self.assertNotIn('saml2', prepared.params)
+        self.assertIn('sap-client', prepared.params)
+
+    def test_retrieve_does_not_include_saml2_disabled_param(self):
+        client = self._make_client(saml2=False)
+        session = MagicMock()
+        response = Mock()
+        response.status_code = 200
+        session.send.return_value = response
+
+        client.retrieve(session, 'GET', '/some/path')
+
+        prepared = session.prepare_request.call_args[0][0]
+        self.assertNotIn('saml2', prepared.params)
+
+    @patch('sap.http.client.requests.Session')
+    def test_build_session_login_includes_saml2_enabled(self, mock_session_cls):
+        client = self._make_client(saml2=True)
+
+        mock_session = MagicMock()
+        mock_session.headers = {}
+        mock_session_cls.return_value = mock_session
+
+        retrieve_calls = []
+        original_retrieve = client.retrieve
+
+        def spy_retrieve(session, method, path, params=None, headers=None, body=None):
+            retrieve_calls.append({'method': method, 'path': path, 'params': params})
+            res = Mock()
+            res.status_code = 200
+            res.headers = {'x-csrf-token': 'token123'}
+            return (Mock(), res)
+
+        client.retrieve = spy_retrieve
+
+        client.build_session()
+
+        self.assertEqual(len(retrieve_calls), 1)
+        self.assertEqual(retrieve_calls[0]['params'], {'saml2': 'enabled'})
+
+    @patch('sap.http.client.requests.Session')
+    def test_build_session_login_includes_saml2_disabled(self, mock_session_cls):
+        client = self._make_client(saml2=False)
+
+        mock_session = MagicMock()
+        mock_session.headers = {}
+        mock_session_cls.return_value = mock_session
+
+        retrieve_calls = []
+
+        def spy_retrieve(session, method, path, params=None, headers=None, body=None):
+            retrieve_calls.append({'method': method, 'path': path, 'params': params})
+            res = Mock()
+            res.status_code = 200
+            res.headers = {'x-csrf-token': 'token123'}
+            return (Mock(), res)
+
+        client.retrieve = spy_retrieve
+
+        client.build_session()
+
+        self.assertEqual(retrieve_calls[0]['params'], {'saml2': 'disabled'})
+
+    def test_csrf_refetch_on_403_login_includes_saml2(self):
+        client = self._make_client(saml2=True)
+        session = MagicMock()
+        session.headers = {'x-csrf-token': 'old-token'}
+
+        retrieve_calls = []
+        call_count = [0]
+
+        def fake_retrieve(sess, method, path, params=None, headers=None, body=None):
+            retrieve_calls.append({'method': method, 'path': path, 'params': params, 'headers': headers})
+            idx = call_count[0]
+            call_count[0] += 1
+
+            if idx == 0:
+                # First call: the actual request returns 403
+                res = Mock()
+                res.status_code = 403
+                return (Mock(), res)
+            elif idx == 1:
+                # Second call: login to re-fetch CSRF token
+                res = Mock()
+                res.status_code = 200
+                res.headers = {'x-csrf-token': 'new-token'}
+                return (Mock(), res)
+            else:
+                # Third call: retry the original request
+                res = Mock()
+                res.status_code = 200
+                return (Mock(), res)
+
+        client.retrieve = fake_retrieve
+
+        client.execute_with_session(session, 'GET', '/some/path')
+
+        # The login call (index 1) should include saml2 param
+        login_call = retrieve_calls[1]
+        self.assertEqual(login_call['path'], 'login')
+        self.assertIsNotNone(login_call['params'])
+        self.assertEqual(login_call['params']['saml2'], 'enabled')
+
+        # The regular request calls (index 0 and 2) should NOT include saml2 param
+        self.assertIsNone(retrieve_calls[0]['params'])
+        self.assertIsNone(retrieve_calls[2]['params'])
 
 
 if __name__ == '__main__':
