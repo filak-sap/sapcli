@@ -46,7 +46,7 @@ RUN dnf erase -y python3.12-devel gcc gcc-c++ openldap-devel unzip which git && 
 RUN mkdir -p /opt/sapcli && \
     tar -C /opt/sapcli -zxf ${TMP_INST_DIR}/sapcli.tar.gz && \
     test -e /opt/sapcli/bin/sapcli && \
-    pip install pyodata && \
+    pip install pyodata platformdirs && \
     ln -sf /opt/sapcli/sap /usr/lib/$(basename $(readlink /usr/bin/python3))/site-packages/ && \
     ln -sf /opt/sapcli/bin/sapcli /usr/bin/sapcli && \
     sapcli --help && \
