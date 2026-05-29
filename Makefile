@@ -60,7 +60,6 @@ NWRFCSDK_VER=7.50
 NWRFCSDK_HF=14
 NWRFCSDK_DIST=nwrfcsdk.linuxx86_64-$(NWRFCSDK_VER).$(NWRFCSDK_HF).zip
 NWRFCSDK_DIST_URL=https://int.repositories.cloud.sap/artifactory/build-releases/com/sap/conn/nwrfc/nwrfcsdk.linuxx86_64/$(NWRFCSDK_VER).$(NWRFCSDK_HF)/$(NWRFCSDK_DIST)
->>>>>>> 69357a2 (docker: install nwrfc)
 
 .PHONY: run_pylint
 run_pylint:
