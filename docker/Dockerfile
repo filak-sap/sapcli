@@ -17,6 +17,7 @@ RUN update-ca-trust
 
 RUN dnf install -y 'dnf-command(config-manager)' \
  && dnf config-manager --enable crb \
+ && dnf update -y \
  && dnf install -y python3.12 python3.12-requests python3.12-pyyaml python3.12-pip python3.12-devel python3.12-Cython \
         gcc gcc-c++ openldap-devel unzip which git epel-release glibc-langpack-en \
  && ln -sf $(which pip3.12) /usr/local/bin/pip \
