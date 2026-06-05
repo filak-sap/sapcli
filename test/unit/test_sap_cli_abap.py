@@ -320,6 +320,7 @@ class TestAbapSystemInfo(unittest.TestCase):
         """Test that systeminfo prints key: value lines for all entries"""
         connection = Connection([RESPONSE_SYSTEM_INFORMATION, RESPONSE_JSON_SYSTEM_INFORMATION])
         args = parse_args(['systeminfo'])
+        args.ashost = 'myhost.example.com'
         console, factory = make_console_factory()
         args.console_factory = factory
 
@@ -328,19 +329,21 @@ class TestAbapSystemInfo(unittest.TestCase):
         output = console.capout
         lines = output.strip().split('\n')
 
-        # 24 XML entries + 5 JSON entries
-        self.assertEqual(len(lines), 29)
+        # 1 configured ashost + 24 XML entries + 5 JSON entries
+        self.assertEqual(len(lines), 30)
 
     def test_systeminfo_output_format(self):
         """Test that systeminfo prints entries in key: value format"""
         connection = Connection([RESPONSE_SYSTEM_INFORMATION, RESPONSE_JSON_SYSTEM_INFORMATION])
         args = parse_args(['systeminfo'])
+        args.ashost = 'myhost.example.com'
         console, factory = make_console_factory()
         args.console_factory = factory
 
         args.execute(connection, args)
 
         output = console.capout
+        self.assertIn('ashost: myhost.example.com\n', output)
         self.assertIn('ApplicationServerName: C50_ddci\n', output)
         self.assertIn('DBName: C50/02\n', output)
         self.assertIn('OSName: Linux\n', output)
@@ -353,6 +356,7 @@ class TestAbapSystemInfo(unittest.TestCase):
         """Test that systeminfo sends GET requests to both endpoints"""
         connection = Connection([RESPONSE_SYSTEM_INFORMATION, RESPONSE_JSON_SYSTEM_INFORMATION])
         args = parse_args(['systeminfo'])
+        args.ashost = 'myhost.example.com'
         console, factory = make_console_factory()
         args.console_factory = factory
 

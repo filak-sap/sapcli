@@ -76,10 +76,15 @@ def systeminfo(connection, args):
     info = sap.adt.system.get_information(connection)
 
     if args.key:
+        if args.key == 'ashost':
+            console.printout(args.ashost)
+            return
+
         value = info.get(args.key)
         if value is not None:
             console.printout(value)
     else:
+        console.printout(f'ashost: {args.ashost}')
         for entry in info:
             console.printout(f'{entry.identity}: {entry.title}')
 
