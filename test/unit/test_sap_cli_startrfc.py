@@ -29,6 +29,13 @@ parse_args = generate_parse_args(sap.cli.startrfc.CommandGroup())
 
 class TestStartRFC(ConsoleOutputTestCase, PatcherTestCase):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
+
     def setUp(self):
         super(TestStartRFC, self).setUp()
 
@@ -48,9 +55,6 @@ class TestStartRFC(ConsoleOutputTestCase, PatcherTestCase):
         self.rfc_connection.call.return_value = self.response
         self.patch('sap.rfc.core.rfc_is_available', return_value=True)
         self.patch('sap.rfc.core.SAPRFC_MODULE', new=mod_pyrfc)
-
-    def tearDown(self):
-        self.unpatch_all()
 
     def execute_cmd(self, json_args_obj=None, exp_stdout=None, params=[], exp_stderr='', exp_params=None, exp_call=True):
 

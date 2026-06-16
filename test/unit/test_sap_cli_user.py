@@ -21,7 +21,14 @@ from infra import generate_parse_args
 parse_args = generate_parse_args(sap.cli.user.CommandGroup())
 
 
-class TestUserDetails(PatcherTestCase, ConsoleOutputTestCase):
+class TestUserDetails(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -52,7 +59,14 @@ Last Login: 20200211
 ''')
 
 
-class TestUserCreate(PatcherTestCase, ConsoleOutputTestCase):
+class TestUserCreate(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -86,7 +100,14 @@ class TestUserCreate(PatcherTestCase, ConsoleOutputTestCase):
 ''')
 
 
-class TestUserChange(PatcherTestCase, ConsoleOutputTestCase):
+class TestUserChange(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()

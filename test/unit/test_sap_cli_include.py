@@ -108,7 +108,14 @@ class TestIncludeActivate(unittest.TestCase):
         self.assertRegex(conn.execs[0].body, '.*adtcore:uri=[^?]*test_activation\?context=[^"]*master_report".*')
 
 
-class TestIncludeAttributes(PatcherTestCase, ConsoleOutputTestCase):
+class TestIncludeAttributes(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()

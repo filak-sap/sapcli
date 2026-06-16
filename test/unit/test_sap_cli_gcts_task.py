@@ -14,7 +14,15 @@ from sap.cli.gcts_task import CommandGroup
 parse_args = generate_parse_args(CommandGroup())
 
 
-class TestgCTSTaskCLI(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSTaskCLI(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
+
     def setUp(self):
         super().setUp()
         ConsoleOutputTestCase.setUp(self)

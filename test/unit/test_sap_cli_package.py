@@ -162,7 +162,14 @@ class TestPackageCreate(unittest.TestCase):
         self.assertNotIn('adtcore:responsible="lowercase_user"', body)
 
 
-class TestPackageList(PatcherTestCase, ConsoleOutputTestCase):
+class TestPackageList(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         ConsoleOutputTestCase.setUp(self)
@@ -251,7 +258,14 @@ CLAS/OC  ZCL_HELLO_WORLD  Test class
 PROG/P   Z_HELLO_WORLD    Test program
 ''')
 
-class TestPackageStat(PatcherTestCase, ConsoleOutputTestCase):
+class TestPackageStat(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         ConsoleOutputTestCase.setUp(self)
@@ -288,7 +302,14 @@ Package Type           :development
         self.assertConsoleContents(self.console, stderr='Package $IAMTHEKING not found\n')
 
 
-class TestPackageDelete(PatcherTestCase, ConsoleOutputTestCase):
+class TestPackageDelete(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         ConsoleOutputTestCase.setUp(self)

@@ -37,7 +37,14 @@ OK_ENHO_RESPONSE = Response(
     content_type='application/vnd.sap.adt.enh.enhoxhb.v4+xml'
 )
 
-class TestBadiEnhImplList(PatcherTestCase, ConsoleOutputTestCase):
+class TestBadiEnhImplList(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()

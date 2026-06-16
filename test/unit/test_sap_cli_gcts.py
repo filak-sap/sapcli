@@ -107,7 +107,14 @@ Exception:
 ''')
 
 
-class TestgCTSGetRepository(PatcherTestCase, unittest.TestCase):
+class TestgCTSGetRepository(unittest.TestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -171,7 +178,14 @@ class TestgCTSGetRepository(PatcherTestCase, unittest.TestCase):
         self.fake_fetch_repos.assert_called_once_with(self.connection)
 
 
-class TestgCTSCloneSync(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSCloneSync(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -508,7 +522,14 @@ Cloned repository:
         )
 
 
-class TestgCTSCloneAsync(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSCloneAsync(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -799,7 +820,14 @@ class TestgCTSCloneAsync(PatcherTestCase, ConsoleOutputTestCase):
         )
 
 
-class TestgCTSRepoList(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoList(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -867,7 +895,14 @@ three | third_rid | third_branch | 7890   | CLONED  | vS3D | third_url
         fake_dumper.assert_called_once_with(sap.cli.core.get_console(), messages)
 
 
-class TestgCTSDelete(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSDelete(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -933,7 +968,14 @@ class TestgCTSDelete(PatcherTestCase, ConsoleOutputTestCase):
         self.assertConsoleContents(self.console, stderr=f'No repository found with the URL "{repo_url}".\n')
 
 
-class TestgCTSCheckout(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSCheckout(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1199,7 +1241,14 @@ Checkout exception
             stderr=wait_for_operation_error_msg + '\n')
 
 
-class TestgCTSLog(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSLog(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1302,7 +1351,14 @@ Date:   2020-10-02
         self.assertConsoleContents(self.console, stderr=f'No repository found with the URL "{repo_url}".\n')
 
 
-class TestgCTSPull(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSPull(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1419,7 +1475,14 @@ New HEAD is 456
 ''')
 
 
-class TestgCTSPush(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSPush(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1481,7 +1544,14 @@ class TestgCTSPush(PatcherTestCase, ConsoleOutputTestCase):
         self.assertConsoleContents(self.console, stderr=f'No repository found with the URL "{repo_url}".\n')
 
 
-class TestgCTSConfig(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSConfig(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1675,7 +1745,14 @@ the_key_two=two
         fake_dumper.assert_called_once_with(self.console, messages)
 
 
-class TestgCTSCommit(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSCommit(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1816,7 +1893,14 @@ class TestgCTSCommit(PatcherTestCase, ConsoleOutputTestCase):
         )
 
 
-class TestgCTSRepoSetUrl(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoSetUrl(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1856,7 +1940,14 @@ class TestgCTSRepoSetUrl(PatcherTestCase, ConsoleOutputTestCase):
         self.assertConsoleContents(self.console, stderr='Cannot set new URL.\n')
 
 
-class TestgCTSRepoGetProperty(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoGetProperty(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -1968,7 +2059,14 @@ URL: {self.repo_url}
         self.assertConsoleContents(self.console, stderr='Cannot get repository.\n')
 
 
-class TestgCTSRepoSetProperty(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoSetProperty(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2032,7 +2130,14 @@ class TestgCTSRepoSetProperty(PatcherTestCase, ConsoleOutputTestCase):
         self.assertConsoleContents(self.console, stderr='Cannot get repository.\n')
 
 
-class TestgCTSRepoActivities(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoActivities(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2139,7 +2244,14 @@ class TestgCTSRepoActivities(PatcherTestCase, ConsoleOutputTestCase):
 ''')
 
 
-class TestgCTSRepoCreateBranch(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoCreateBranch(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2220,7 +2332,14 @@ class TestgCTSRepoCreateBranch(PatcherTestCase, ConsoleOutputTestCase):
         self.assertConsoleContents(self.console, stderr='Cannot get repository.\n')
 
 
-class TestgCTSRepoDeleteBranch(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoDeleteBranch(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2284,7 +2403,14 @@ class TestgCTSRepoDeleteBranch(PatcherTestCase, ConsoleOutputTestCase):
         self.assertConsoleContents(self.console, stderr='Cannot get repository.\n')
 
 
-class TestgCTSRepoListBranches(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoListBranches(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2418,7 +2544,14 @@ branch1  | remote | False    | False  | refs/remotes/origin/branch1
         self.assertConsoleContents(self.console, stderr='Cannot get repository.\n')
 
 
-class TestqCTSUserGetCredentials(PatcherTestCase, ConsoleOutputTestCase):
+class TestqCTSUserGetCredentials(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2471,7 +2604,14 @@ class TestqCTSUserGetCredentials(PatcherTestCase, ConsoleOutputTestCase):
         fake_dumper.assert_called_once_with(self.console, messages)
 
 
-class TestgCTSUserGetCredentialsEndpoint(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSUserGetCredentialsEndpoint(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2665,7 +2805,14 @@ class TestgCTSUserGetCredentialsEndpoint(PatcherTestCase, ConsoleOutputTestCase)
         )
 
 
-class TestgCTSUserSetCredentials(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSUserSetCredentials(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2702,7 +2849,14 @@ class TestgCTSUserSetCredentials(PatcherTestCase, ConsoleOutputTestCase):
         fake_dumper.assert_called_once_with(self.console, messages)
 
 
-class TestgCTSUserDeleteCredentials(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSUserDeleteCredentials(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2738,7 +2892,14 @@ class TestgCTSUserDeleteCredentials(PatcherTestCase, ConsoleOutputTestCase):
         fake_dumper.assert_called_once_with(self.console, messages)
 
 
-class TestgCTSGetSystemConfigProperty(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSGetSystemConfigProperty(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2789,7 +2950,14 @@ Value: {self.config_value}
         self.assertConsoleContents(self.console, stderr='Request error\n')
 
 
-class TestgCTSListSystemConfig(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSListSystemConfig(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2842,7 +3010,14 @@ THE_KEY2 | the_value2 | SYSTEM   | 2022       | Test
         self.assertConsoleContents(self.console, stderr='Request error\n')
 
 
-class TestgCTSSetSystemConfigProperty(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSSetSystemConfigProperty(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2893,7 +3068,14 @@ Value: {self.config_value}
         self.assertConsoleContents(self.console, stderr='Request error\n')
 
 
-class TestgCTSDeleteSystemConfigProperty(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSDeleteSystemConfigProperty(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2938,7 +3120,14 @@ class TestgCTSDeleteSystemConfigProperty(PatcherTestCase, ConsoleOutputTestCase)
         self.assertConsoleContents(self.console, stderr='Request error\n')
 
 
-class TestgCTSConsoleSugarOperationProgress(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSConsoleSugarOperationProgress(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -2980,7 +3169,14 @@ class TestgCTSConsoleSugarOperationProgress(PatcherTestCase, ConsoleOutputTestCa
         self.assertIsNone(progress._recover_messages.get('test-pid-123'))
 
 
-class TestgCTSUpdateFilesystem(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSUpdateFilesystem(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -3177,7 +3373,14 @@ class TestgCTSUpdateFilesystem(PatcherTestCase, ConsoleOutputTestCase):
         )
 
 
-class TestgCTSSetRole(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSSetRole(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         self.connection = Mock()
@@ -3208,7 +3411,14 @@ class TestgCTSSetRole(PatcherTestCase, ConsoleOutputTestCase):
         self.assertEqual(exit_code, 0)
 
 
-class TestgCTSRepoObjects(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoObjects(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -3351,7 +3561,14 @@ class TestgCTSRepoObjects(PatcherTestCase, ConsoleOutputTestCase):
         fake_dump_msgs.assert_called_once_with(self.console, messages)
 
 
-class TestgCTSRepoTasks(PatcherTestCase, ConsoleOutputTestCase):
+class TestgCTSRepoTasks(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()

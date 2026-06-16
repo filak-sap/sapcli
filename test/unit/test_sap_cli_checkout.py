@@ -529,7 +529,14 @@ class TestDOT_ABAP_GIT(unittest.TestCase):
 ''')
 
 
-class TestCheckoutFunctionGroup(PatcherTestCase, ConsoleOutputTestCase):
+class TestCheckoutFunctionGroup(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     class MockOpenWrite:
         def __init__(self):

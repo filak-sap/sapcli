@@ -19,8 +19,15 @@ from infra import generate_parse_args
 parse_args = generate_parse_args(sap.cli.abapgit.CommandGroup())
 
 
-class TestAbapgitLink(PatcherTestCase, ConsoleOutputTestCase):
+class TestAbapgitLink(ConsoleOutputTestCase, PatcherTestCase):
     '''Test Abapgit Link command'''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
@@ -91,8 +98,15 @@ class TestAbapgitLink(PatcherTestCase, ConsoleOutputTestCase):
 ''')
 
 
-class TestAbapgitPull(PatcherTestCase, ConsoleOutputTestCase):
+class TestAbapgitPull(ConsoleOutputTestCase, PatcherTestCase):
     '''Test Abapgit Pull command'''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()

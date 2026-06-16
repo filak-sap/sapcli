@@ -13,6 +13,13 @@ parse_args = generate_parse_args(sap.cli.adt.CommandGroup())
 
 class TestADT(ConsoleOutputTestCase, PatcherTestCase):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
+
     def setUp(self):
         super(TestADT, self).setUp()
 
@@ -27,9 +34,6 @@ class TestADT(ConsoleOutputTestCase, PatcherTestCase):
 
         self.adt_connection = MagicMock()
         self.adt_connection.collection_types = self.collection_types
-
-    def tearDown(self):
-        self.unpatch_all()
 
     def parse_collections(self):
         return parse_args('collections')

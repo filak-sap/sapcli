@@ -21,7 +21,14 @@ from fixtures_adt_featuretoggle import (
 
 parse_args = generate_parse_args(sap.cli.featuretoggle.CommandGroup())
 
-class TestFeatureToggle(PatcherTestCase, ConsoleOutputTestCase):
+class TestFeatureToggle(ConsoleOutputTestCase, PatcherTestCase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        PatcherTestCase.__init__(self)
+
+    def tearDown(self):
+        PatcherTestCase.unpatch_all(self)
 
     def setUp(self):
         super().setUp()
