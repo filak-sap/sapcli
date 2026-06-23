@@ -13,6 +13,7 @@ COPY sapcli.tar.gz ${TMP_INST_DIR}
 COPY ${NWRFCSDK_DIST} ${TMP_INST_DIR}
 
 COPY SAPNetCA_G2.crt /etc/pki/ca-trust/source/anchors
+COPY SAP_Global_Root_CA.crt /etc/pki/ca-trust/source/anchors
 RUN update-ca-trust
 
 RUN dnf install -y 'dnf-command(config-manager)' \
