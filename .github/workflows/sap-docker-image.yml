@@ -1,0 +1,46 @@
+name: SAP Docker Image
+
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  pull_request:
+
+env:
+  DOCKER_REGISTRY: dlm.int.repositories.cloud.sap
+
+jobs:
+  build:
+    runs-on: [self-hosted, solinas]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: make docker-dependencies
+
+      - name: Determine NWRFCSDK distribution
+        id: nwrfcsdk
+        run: echo "dist=$(make get-nwrfcsdk-dist)" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ vars.ARTIFACTORY_USER }}
+          password: ${{ secrets.ARTIFACTORY_TOKEN }}
+
+      - name: Build and publish sapcli image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/automation/sapcli:latest
+          file: docker/Dockerfile
+          build-args: |
+            BUILD_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            COMMIT=${{ github.sha }}
+            NWRFCSDK_DIST=${{ steps.nwrfcsdk.outputs.dist }}

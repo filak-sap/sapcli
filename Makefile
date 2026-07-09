@@ -148,8 +148,15 @@ SAP_Global_Root_CA.crt:
 $(NWRFCSDK_DIST):
 	$(CURL) -L -o $@ $(NWRFCSDK_DIST_URL)
 
+.PHONY: get-nwrfcsdk-dist
+get-nwrfcsdk-dist:
+	@echo $(NWRFCSDK_DIST)
+
+.PHONY: docker-dependencies
+docker-dependencies: $(NWRFCSDK_DIST) sapcli.tar.gz SAPNetCA_G2.crt SAP_Global_Root_CA.crt
+
 .PHONY: docker
-docker: $(NWRFCSDK_DIST) sapcli.tar.gz SAPNetCA_G2.crt SAP_Global_Root_CA.crt
+docker: docker-dependencies
 	$(DOCKER) build --no-cache --force-rm --label SAPCLI_COMMIT=$$(git rev-parse HEAD) \
 		--build-arg NWRFCSDK_DIST=$(NWRFCSDK_DIST) \
 		-t sapcli -f docker/Dockerfile .
