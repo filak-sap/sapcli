@@ -393,7 +393,6 @@ def mirror(connection, args):
             typ='GITHUB',
             config={
                 'VCS_NO_IMPORT': 'true',
-                'VCS_TARGET_DIR': 'src/',
                 'VCS_SAP_DELIVERY_COMP': systemconfig['env']['VCS_SAP_DELIVERY_COMP'],
                 'VCS_SAP_DELIVERY_RELEASE': systemconfig['env']['VCS_SAP_DELIVERY_RELEASE'],
             }
