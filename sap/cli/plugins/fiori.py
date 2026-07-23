@@ -4,6 +4,7 @@ import json
 from html.parser import HTMLParser
 
 import sap.cli.core
+import sap.cli.plugin
 
 
 class FlpPlugin(sap.cli.plugin.APluginBaseFLP):
@@ -61,9 +62,9 @@ def list_spaces(connection, args):
         return
 
     for space in parser.assignedSpaces:
-        print (f"{space['title']} :: {space['id']}")
+        print(f"{space['title']} :: {space['id']}")
         for page in space['pages']:
-            print (f"  {page['title']} :: {page['id']} (visible: {page['visibility']['desktop']})")
+            print(f"  {page['title']} :: {page['id']} (visible: {page['visibility']['desktop']})")
 
 
 @CommandGroup.command('list-apps')

@@ -7,6 +7,7 @@ Dependency modules are lazy loaded to enable partial modular installation.
 
 
 import os
+import os.path
 from collections import namedtuple
 from functools import partial
 from types import SimpleNamespace
@@ -14,10 +15,21 @@ from sap import rfc
 from sap.config import SAPCliConfigError
 from sap.errors import SAPCliError
 from sap.http.auth_plugin_cache import cache_key_for, get_response_store
-from sap.cli.plugin import (
-    discover_plugins,
-    PluginDefinitions
-)
+
+from sap.cli._discover_plugins import _discover_plugins
+
+
+def _build_plugin_command_group():
+    """Build a command group from a plugin class.
+
+    Returns a tuple of (connection function, command group).
+    """
+
+    def plugin_command_group(plugin_cls):
+        plugin = plugin_cls()
+        return (plugin.connection(), plugin.command_group())
+
+    return [plugin_command_group(plugin_cls) for plugin_cls in _discover_plugins()]
 
 
 class CommandsCache:
@@ -30,6 +42,7 @@ class CommandsCache:
     local = None
     plugins = None
 
+    # pylint: disable=too-many-statements
     @staticmethod
     def commands():
         """Returns list of available commands"""
@@ -136,12 +149,16 @@ class CommandsCache:
             ]
 
         if CommandsCache.plugins is None:
-            CommandsCache.plugins = list()
-            for plugin_cls in discover_plugins():
-                plugin = plugin_cls()
-                CommandsCache.plugins.append((plugin.connection(), plugin.command_group()))
+            CommandsCache.plugins = _build_plugin_command_group()
 
-        return CommandsCache.adt + CommandsCache.rest + CommandsCache.rfc + CommandsCache.odata + CommandsCache.local + CommandsCache.plugins
+        return (
+            CommandsCache.adt
+            + CommandsCache.rest
+            + CommandsCache.rfc
+            + CommandsCache.odata
+            + CommandsCache.local
+            + CommandsCache.plugins
+        )
 
 
 def adt_connection_from_args(args):
@@ -324,8 +341,8 @@ def flp_connection_from_args(args):
     import sap.rest
 
     return sap.rest.Connection(
-        'sap', # Base path
-        'bc/ui2/flp', # Login path
+        'sap',  # Base path
+        'bc/ui2/flp',  # Login path
         args.ashost,
         args.client,
         args.user,

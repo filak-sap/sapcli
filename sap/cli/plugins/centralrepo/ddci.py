@@ -8,7 +8,6 @@ from sap import get_logger
 import sap.cli.core
 import sap.cli.helpers
 import sap.rest.gcts.simple
-from sap.rest.gcts.remote_repo import Repository
 
 from sap.cli.plugins.centralrepo.git import (
     get_local_repo_dirs,
@@ -35,13 +34,14 @@ from sap.cli.gcts import (
 )
 
 CS_COMPONENT_MAPPING = {
-    'SAPFCORE' : 'SAPSCORE_B',
-    'SAPPCORE_H' : 'SAPPCORE_H',
-    'SAPSCORE' : 'SAPSCORE_B',
-    'SAPSCORE_B' : 'SAPSCORE_B',
-    'SCORE_HOME' : 'SAPPCORE_H',
+    'SAPFCORE': 'SAPSCORE_B',
+    'SAPPCORE_H': 'SAPPCORE_H',
+    'SAPSCORE': 'SAPSCORE_B',
+    'SAPSCORE_B': 'SAPSCORE_B',
+    'SCORE_HOME': 'SAPPCORE_H',
     'SAP_BASIS': 'SAP_BASIS',
 }
+
 
 def mod_log():
     """ADT Module logger"""
@@ -162,8 +162,10 @@ def load_yaml_file(filepath, console):
 def get_local_repo_systemconfig(repo_dir, console):
     return load_yaml_file(os.path.join(repo_dir, 'systemconfig.yml'), console)
 
+
 def get_ddci_properties(repo_dir, console):
     return load_yaml_file(os.path.join(repo_dir, '.ddci', 'properties.yml'), console)
+
 
 def write_local_repo_systemconfig(repo_dir, systemconfig):
     try:
@@ -200,18 +202,17 @@ def repo_consistency_check(repo, console, git, local_repo_dir):
     else:
         comp = env.get('VCS_SAP_DELIVERY_COMP', None)
         if comp is None:
-            console.printout(f' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_COMP"')
+            console.printout(' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_COMP"')
         elif comp != repo.component:
             console.printout(f' ! Invalid systemconfig.yml: component mismatch {repo.component} != {comp}')
 
         rel = env.get('VCS_SAP_DELIVERY_RELEASE', None)
         if rel is None:
-            console.printout(f' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_RELEASE"')
+            console.printout(' ! Invalid systemconfig.yml: missing "env.VCS_SAP_DELIVERY_RELEASE"')
         elif rel != repo.release:
             console.printout(f' ! Invalid systemconfig.yml: release mismatch {repo.release} != {rel}')
 
     return systemconfig
-
 
 
 @DdciRepoGroup.argument('-n', '--dryrun', default=False, action='store_true')
@@ -234,7 +235,6 @@ def synchronize(connection, args):
     git = GitCommand(console)
 
     repos = fetch_ddci_repos(connection)
-    not_clonable = list()
     checkout_error = list()
 
     for repo in repos:
@@ -309,13 +309,13 @@ def migratetoer1(connection, args):
     """Update SW Component, Release and other stuff for ER1"""
 
     component_mapping = {
-        'SAPFCORE' : 'SAPSCORE_B',
-        'SAPPCORE_H' : 'SAPPCORE_H',
-        'SAPSCORE' : 'SAPSCORE_B',
-        'SCORE_HOME' : 'SAPPCORE_H',
+        'SAPFCORE': 'SAPSCORE_B',
+        'SAPPCORE_H': 'SAPPCORE_H',
+        'SAPSCORE': 'SAPSCORE_B',
+        'SCORE_HOME': 'SAPPCORE_H',
     }
 
-    release_mapping  = {
+    release_mapping = {
         'S4DEV': 'S4DEV',
     }
 
@@ -365,7 +365,7 @@ def mirror(connection, args):
     local_dirs = [entry.name for entry in os.scandir(args.destdir) if entry.is_dir(follow_symlinks=False)]
     git = GitCommand(console)
     repos = fetch_ddci_repos(connection)
-    repoidx = { repo.rid: repo for repo in repos }
+    repoidx = {repo.rid: repo for repo in repos}
 
     for repodir in local_dirs:
         local_repo_dir = os.path.join(args.destdir, repodir)
@@ -379,7 +379,7 @@ def mirror(connection, args):
 
         systemconfig = get_local_repo_systemconfig(local_repo_dir, console)
         if systemconfig is None:
-            console.printout(f' ! systemconfig.yml: missing')
+            console.printout(' ! systemconfig.yml: missing')
             continue
 
         mod_log().info('Setting up ...')
@@ -412,7 +412,6 @@ def mirror(connection, args):
         if current_branch not in ['main', 'master']:
             mod_log().info('Setting role SOURCE ...')
             new_repo.set_role('SOURCE')
-
 
     return 0
 
@@ -515,7 +514,7 @@ def analyze_packages(connection, args):
 
                 syscomponent = adt_pkg.transport.software_component.name
                 syslayer = adt_pkg.transport.transport_layer.name
-            except:
+            except Exception:  # pylint: disable=broad-except
                 syscomponent = 'N/a'
                 syslayer = 'N/a'
 
@@ -529,24 +528,25 @@ def analyze_packages(connection, args):
         if args.commit and desync_pkgs:
             try:
                 gcts_repo = sap.rest.gcts.remote_repo.Repository(connection, repodir)
-                response = gcts_repo.commit('devc: update SW comp and TR layer',
-                                      [{'object': pkg, 'type': 'DEVC'} for pkg in desync_pkgs],
-                                      description='''We did not change the DEVC objects in repos during CodeSplit
+                response = gcts_repo.commit(
+                    'devc: update SW comp and TR layer',
+                    [{'object': pkg, 'type': 'DEVC'} for pkg in desync_pkgs],
+                    description='''We did not change the DEVC objects in repos during CodeSplit
 
 JIRA=SYSDEV-888''',
-                                      autopush=True)
+                    autopush=True)
                 print(response)
             except Exception as ex:
                 print(ex)
 
     print('---')
     print('layers')
-    for l in layers:
-        print(f'- {l}')
+    for layer in layers:
+        print(f'- {layer}')
 
     print('components')
-    for c in components:
-        print(f'- {c}')
+    for component in components:
+        print(f'- {component}')
 
 
 @DdciRepoGroup.argument('-r', '--repo')
@@ -556,14 +556,14 @@ JIRA=SYSDEV-888''',
 @DdciRepoGroup.command('pull_ddci_configuration_changes_commit')
 # pylint: disable=unused-argument
 def pull_ddci_configuration_changes_commit(connection, args):
-    """Pull central mirror branch with commit with configuration changes push by 
+    """Pull central mirror branch with commit with configuration changes push by
     update_packages_ddci_properties.sh script to the remote mirror branch.
-    
+
     The command should be executed in the local directory of the gCTS repo and
     should be executed right after the commit with configuration changes was pushed
     to the remote mirror branch. Local repository should be in the same state
     as the remote one.
-    
+
     Arguments:
     -c, --commit ... the commit hash which was pushed to the remote mirror branch
     -b, --branch ... the branch name of the remote mirror branch
@@ -575,7 +575,7 @@ def pull_ddci_configuration_changes_commit(connection, args):
     for gcts_repo in gcts_repos:
         if gcts_repo.name != args.repo:
             continue
-            
+
         mod_log().info('Repo: %s', gcts_repo.name)
         central_repo_branch = gcts_repo.branch
         mod_log().info('Branch on central repo: %s', central_repo_branch)
@@ -585,11 +585,11 @@ def pull_ddci_configuration_changes_commit(connection, args):
         if central_repo_branch != args.branch:
             print("ERROR: Branch of central gCTS repo is not " + args.branch + "!")
             exit(2)
-        
+
         console = sap.cli.core.get_console()
         git = GitCommand(console)
         local_repo_dir = os.path.join(args.destdir, gcts_repo.rid)
-        
+
         remote_repo_url = git.remote_get_url_origin(local_repo_dir).removesuffix(".git")
         gcts_repo_url_without_suffix = gcts_repo.url.removesuffix(".git")
         if remote_repo_url != gcts_repo_url_without_suffix:
@@ -609,15 +609,15 @@ def pull_ddci_configuration_changes_commit(connection, args):
             print("Argument commit hash:  " + args.commit)
             print("Local commit hash:     " + local_repo_commit)
             exit(1)
-        
+
         difference_commits = git.run('cherry', central_repo_head_commit_hash, cwd=local_repo_dir)
         mod_log().info('Difference commits between central repo branch and remote repo branch:')
         mod_log().info(difference_commits)
-        
+
         if difference_commits == '':
             print("WARNING: Remote " + args.branch + " branch and central gCTS " + central_repo_branch + " branch are equal. Nothing to pull.")
             exit(0)
-        
+
         list_of_difference_commits = difference_commits.splitlines()
         # example of print(list_of_difference_commits):
         # + fac6af5dd8ae6e399e937dba6f4d31be7654d833
@@ -634,11 +634,11 @@ def pull_ddci_configuration_changes_commit(connection, args):
             print("Expected: " + args.commit)
             print("Actual:   " + hash_of_first_commit)
             exit(4)
-        
+
         print("The difference between remote " + args.branch + " branch and central gCTS " + args.branch + " branch is only following commit:")
         print(hash_of_first_commit)
         print("")
-        
+
         noimports_progress = ConsoleSugarOperationProgress(console)
         try:
             with abap_modifications_disabled(gcts_repo, progress=noimports_progress):

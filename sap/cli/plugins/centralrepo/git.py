@@ -2,7 +2,6 @@ import re
 import os
 import shutil
 import subprocess
-from io import StringIO
 
 from sap import get_logger
 
@@ -38,7 +37,7 @@ class GitCommand:
             outs, errs = self.proc.communicate(input=stdin, timeout=600)
         except subprocess.TimeoutExpired:
             self.proc.kill()
-            outs, errs =self.proc.communicate()
+            outs, errs = self.proc.communicate()
 
         if self.proc.returncode != 0:
             get_logger().info(errs.decode('utf-8'))
@@ -46,7 +45,7 @@ class GitCommand:
         return outs.decode('utf-8').strip()
 
     def remote_get_url_origin(self, repo_dir):
-        url =  self.run('remote', 'get-url', 'origin', cwd=repo_dir)
+        url = self.run('remote', 'get-url', 'origin', cwd=repo_dir)
 
         if url is not None:
             url = re.sub('https://.*github\\.', 'https://github.', url)

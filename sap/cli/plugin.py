@@ -1,81 +1,77 @@
-import os
-import sys
-import os.path
-import importlib.util
-
-from typing import List
+"""Base classes for implementing CLI plugins"""
 
 import sap.cli
+from sap.cli._discover_plugins import PluginDefinitions
 
 
-def discover_plugins():
-    plugin_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'plugins')
-    for fileordir in os.listdir(plugin_dir):
-        module_name = fileordir
-        if module_name[0] in ['.', '_']:
-            continue
-
-        abspath = os.path.join(plugin_dir, fileordir)
-        if abspath.endswith('.py'):
-            module_name = fileordir[:-3]
-        elif os.path.isdir(abspath):
-            module_name = fileordir
-            abspath = os.path.join(abspath, '__init__.py')
-        else:
-            continue
-
-        abs_module_name = f'sap.cli.plugins.{module_name}'
-        spec = importlib.util.spec_from_file_location(abs_module_name, abspath)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[abs_module_name] = module
-        spec.loader.exec_module(module)
-
-    return PluginDefinitions.loaded_plugins
-
-
-class PluginDefinitions(type):
-    loaded_plugins: List[type] = list()
-
-    def __init__(cls, name, bases, attrs):
-        super().__init__(cls)
-
-        if name.startswith('APluginBase'):
-            return
-
-        PluginDefinitions.loaded_plugins.append(cls)
-
-
-class APluginBase(object, metaclass=PluginDefinitions):
+class APluginBase(metaclass=PluginDefinitions):
+    """Any plugin should inherit from this class and implement the
+       command_group and connection methods.
+    """
 
     def command_group(self):
+        """Return new instance of sap.cli.core.CommandGroup defining CLI interface of the plugin."""
+
         raise NotImplementedError
 
     def connection(self):
+        """Any object your plugin needs to connect to (e.g. ADT, gCTS, Fiori Launchpad)."""
+
         raise NotImplementedError
 
 
-class APluginBaseADT(object, metaclass=PluginDefinitions):
+class APluginBaseADT(metaclass=PluginDefinitions):
+    """Any plugin should inherit from this class and implement the
+       command_group method.
+
+       The connection method is already implemented to
+       return the ADT connection from the sap.cli module.
+    """
 
     def command_group(self):
+        """Return new instance of sap.cli.core.CommandGroup defining CLI interface of the plugin."""
+
         raise NotImplementedError
 
     def connection(self):
+        """Any object your plugin needs to connect to (e.g. ADT, gCTS, Fiori Launchpad)."""
+
         return sap.cli.adt_connection_from_args
 
 
-class APluginBaseGcts(object, metaclass=PluginDefinitions):
+class APluginBaseGcts(metaclass=PluginDefinitions):
+    """Any plugin should inherit from this class and implement the
+       command_group method.
+
+       The connection method is already implemented to
+       return the gCTS/REST connection from the sap.cli module.
+    """
 
     def command_group(self):
+        """Return new instance of sap.cli.core.CommandGroup defining CLI interface of the plugin."""
+
         raise NotImplementedError
 
     def connection(self):
+        """Any object your plugin needs to connect to (e.g. ADT, gCTS, Fiori Launchpad)."""
+
         return sap.cli.gcts_connection_from_args
 
 
-class APluginBaseFLP(object, metaclass=PluginDefinitions):
+class APluginBaseFLP(metaclass=PluginDefinitions):
+    """Any plugin should inherit from this class and implement the
+       command_group method.
+
+       The connection method is already implemented to
+       return the Fiori Launchpad connection from the sap.cli module.
+    """
 
     def command_group(self):
+        """Return new instance of sap.cli.core.CommandGroup defining CLI interface of the plugin."""
+
         raise NotImplementedError
 
     def connection(self):
+        """Any object your plugin needs to connect to (e.g. ADT, gCTS, Fiori Launchpad)."""
+
         return sap.cli.flp_connection_from_args

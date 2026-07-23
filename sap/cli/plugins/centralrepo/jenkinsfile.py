@@ -2,10 +2,18 @@ import sys
 import typing
 from enum import Enum
 
+from sap import get_logger
+
 
 SPACE = ' \t\r\n'
 QUOTES = '\'"'
 OPERATORS = '=[]:,()'
+
+
+def mod_log():
+    """ADT Module logger"""
+
+    return get_logger()
 
 
 class State(Enum):
@@ -51,7 +59,7 @@ def parse_jenkinsfile_ci(filepath):
             elif state == State.STRING:
                 # We go a closing Quote -> !!! If they escape, then we got this wrong !!!
                 state = State.CODE
-                token = contents[pos:cursor+1]
+                token = contents[pos:cursor + 1]
                 tokens.append(Token('ST', token, len(tokens)))
                 pos = cursor + 1
 
@@ -95,12 +103,12 @@ def evaulate_ddci_pipeline_config(all_tokens):
                 mod_log().warning('The token "def" not followed by a "WR" token: %s %s', identifier.code, identifier.value)
                 continue
 
-            assignop = tokens[idx+1]
+            assignop = tokens[idx + 1]
             if assignop.value != '=':
                 mod_log().warning('The token "%s" not followed by assignment: %s %s', identifier.value, assignop.code, assignop.value)
                 continue
 
-            openbrace = tokens[idx+2]
+            openbrace = tokens[idx + 2]
             if openbrace.value != '[':
                 mod_log().warning('The token "=" not followed by [: %s %s', openbrace.code, openbrace.value)
                 continue
@@ -125,7 +133,7 @@ def evaulate_ddci_pipeline_config(all_tokens):
                     mod_log().error('The config item "%s" not followed by ":": %s %s', key, colon.code, colon.value)
                     sys.exit(1)
 
-                value = tokens[idx+1]
+                value = tokens[idx + 1]
                 if value.code == 'ST':
                     config_stash[0][key] = value.value[1:-1]
                 elif value.code == 'DG':
@@ -149,14 +157,14 @@ def evaulate_ddci_pipeline_config(all_tokens):
                 mod_log().warning('The token "ddciPipelineAbapPackage" not followed by "(": %s %s', openbrace.code, openbrace.value)
                 continue
 
-            param = tokens[idx+1]
+            param = tokens[idx + 1]
             if param.code != 'WR':
-                mod_log().warning('The token "ddciPipelineAbapPackage" not called with "%s": %s %s', jenparam.code, param.value)
+                mod_log().warning('The token "ddciPipelineAbapPackage" not called with "%s": %s %s', param.code, param.value)
                 sys.exit(1)
 
-            closebrace = tokens[idx+2]
+            closebrace = tokens[idx + 2]
             if closebrace.value != ')':
-                mod_log().warning('The token "ddciPipelineAbapPackage" not closed by ")": %s %s', closerace.code, closerace.value)
+                mod_log().warning('The token "ddciPipelineAbapPackage" not closed by ")": %s %s', closebrace.code, closebrace.value)
                 continue
 
     return (jenkins_config, first_token, last_token)
@@ -170,4 +178,3 @@ if __name__ == "__main__":
             continue
 
         print(token.code, token.value)
-

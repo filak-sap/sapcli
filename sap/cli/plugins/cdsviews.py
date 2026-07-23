@@ -1,7 +1,9 @@
 """Non common CDS operations"""
 
 import sap.cli.core
+import sap.cli.plugin
 from sap.adt.datapreview import DataPreview
+
 
 class CdsViewsPlugin(sap.cli.plugin.APluginBaseADT):
 

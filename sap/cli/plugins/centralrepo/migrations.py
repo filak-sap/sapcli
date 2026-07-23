@@ -57,6 +57,7 @@ def _write_modified_jenkins_file(stream, all_tokens, first_token, last_token):
 
         idx += 1
 
+
 @MigrationsGroup.argument('-n', '--dryrun', action='store_true', default=False)
 @MigrationsGroup.argument('basedir', default='/opt/ddci')
 @MigrationsGroup.command()
@@ -120,7 +121,7 @@ def jenkinsfiletoproperties(connection, args):
             git.add(ddci_jenkinsfile_path, repo)
             git.add(ddci_properties_path, repo)
             git.commit('ddci: move config from Jenkinsfile to properties.yml', repo,
-                    message_body='''The configuration option abapGhRepo is no longer needed because
+                       message_body='''The configuration option abapGhRepo is no longer needed because
 the pipeline ddciPipelineAbapPackage gets it from Jenkins scm and
 the integration pipeline knows it from users who must pass it as a parameter.
 
