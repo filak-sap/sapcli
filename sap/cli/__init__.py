@@ -83,6 +83,7 @@ class CommandsCache:
         import sap.cli.transaction
         import sap.cli.messageclass
         import sap.cli.config
+        import sap.cli.enhs
 
         if CommandsCache.adt is None:
             CommandsCache.adt = [
@@ -119,6 +120,7 @@ class CommandsCache:
                 (adt_connection_from_args, sap.cli.abap.CommandGroup()),
                 (adt_connection_from_args, sap.cli.transaction.CommandGroup()),
                 (adt_connection_from_args, sap.cli.messageclass.CommandGroup()),
+                (adt_connection_from_args, sap.cli.enhs.CommandGroup()),
             ]
 
         if CommandsCache.rest is None:
